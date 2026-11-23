@@ -121,6 +121,20 @@ def use_fork_dev_release() -> None:
         raise RuntimeError("AppSidebar version link still points at the upstream repository")
     sidebar.write_text(text, encoding="utf-8", newline="\n")
 
+    panel_version = ROOT / "frontend/src/lib/panel-version.ts"
+    text = panel_version.read_text(encoding="utf-8")
+    if "const devBuild = /^dev\\+([0-9a-f]{7,40})$/i.exec(v);" not in text:
+        needle = "  if (!v) return '';\n"
+        replacement = (
+            needle
+            + "  const devBuild = /^dev\\+([0-9a-f]{7,40})$/i.exec(v);\n"
+            + "  if (devBuild) return `开发版 ${devBuild[1].slice(0, 8)}`;\n"
+        )
+        if needle not in text:
+            raise RuntimeError("Could not find panel version formatter in panel-version.ts")
+        text = text.replace(needle, replacement, 1)
+    panel_version.write_text(text, encoding="utf-8", newline="\n")
+
     panel = ROOT / "internal/web/service/panel/panel.go"
     text = panel.read_text(encoding="utf-8")
     text = text.replace(
