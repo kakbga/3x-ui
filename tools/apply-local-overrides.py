@@ -115,6 +115,21 @@ def use_fork_dev_release() -> None:
     text = release.read_text(encoding="utf-8")
     if "  publish-dev:" not in text:
         raise RuntimeError("release.yml no longer defines the rolling dev-latest release")
+    text = text.replace("msystem: MINGW64", "msystem: UCRT64")
+    text = text.replace("mingw-w64-x86_64-gcc", "mingw-w64-ucrt-x86_64-gcc")
+    text = text.replace("mingw-w64-x86_64-sqlite3", "mingw-w64-ucrt-x86_64-sqlite3")
+    text = text.replace("mingw-w64-x86_64-pkg-config", "mingw-w64-ucrt-x86_64-pkgconf")
+    if any(
+        marker in text
+        for marker in (
+            "msystem: MINGW64",
+            "mingw-w64-x86_64-gcc",
+            "mingw-w64-x86_64-sqlite3",
+            "mingw-w64-x86_64-pkg-config",
+            "mingw-w64-x86_64-pkgconf",
+        )
+    ):
+        raise RuntimeError("release.yml still configures the deprecated MINGW64 environment")
     text = text.replace(
         "    if: github.event_name == 'push' && github.ref == 'refs/heads/main'",
         "    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'",
