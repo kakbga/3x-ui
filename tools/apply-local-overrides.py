@@ -64,13 +64,16 @@ def use_fork_dev_release() -> None:
     start = text.index("resolve_latest_tag() {")
     end = text.index("\n}\n", start) + 3
     text = text[:start] + '''resolve_latest_tag() {
-    # This fork publishes a rolling dev-latest build after each upstream sync.
-    echo "dev-latest"
+    # Select the latest stable release from this fork; dev-latest is opt-in.
+    local latest_url
+    latest_url=$(curl -fLsS --retry 3 --retry-delay 2 --connect-timeout 15 -o /dev/null -w '%{url_effective}' \\
+        "https://github.com/kakbga/3x-ui/releases/latest") || return 1
+    printf '%s\\n' "${latest_url##*/}"
 }
 ''' + text[end:]
     text = text.replace(
         "# resolve_latest_tag prints the latest stable release tag. It prefers the web\n# releases/latest redirect, which is not subject to the unauthenticated API's\n# 60 req/h-per-IP limit that trips shared CI/CGNAT addresses (the install then\n# fails with \"Failed to fetch x-ui version\"), and falls back to the API.",
-        "# resolve_latest_tag selects this fork's rolling release.",
+        "# resolve_latest_tag selects the latest stable release from this fork.",
     )
     text = text.replace("https://github.com/MHSanaei/3x-ui/releases/download/", "https://github.com/kakbga/3x-ui/releases/download/")
     text = text.replace("https://raw.githubusercontent.com/MHSanaei/3x-ui/", "https://raw.githubusercontent.com/kakbga/3x-ui/")
