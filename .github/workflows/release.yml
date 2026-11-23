@@ -341,15 +341,14 @@ jobs:
   # =================================
   #  Rolling dev channel (per-commit)
   # =================================
-  # Publishes/overwrites the build artifacts to a single fixed-tag pre-release
-  # `dev-latest`, force-moved to the new commit on every push to main. The panel's
-  # "Dev" update channel installs from this tag. `--latest=false` is load-bearing:
-  # it keeps releases/latest pointing at the real stable tag, so the stable
-  # channel is unaffected.
+  # Publishes/overwrites this fork's artifacts to the fixed rolling tag
+  # `dev-latest`. The upstream-sync workflow explicitly dispatches this workflow
+  # after pushing its customized commit because GITHUB_TOKEN pushes do not start
+  # another push-triggered workflow.
   publish-dev:
     name: Publish rolling dev release
     needs: [build, build-windows]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: write
