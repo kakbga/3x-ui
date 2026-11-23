@@ -123,6 +123,10 @@ def use_fork_dev_release() -> None:
 
     panel_version = ROOT / "frontend/src/lib/panel-version.ts"
     text = panel_version.read_text(encoding="utf-8")
+    text = text.replace(
+        '// Format a panel version for display. Dev builds report a "dev+<commit>"\n// identity (see config.GetPanelVersion); show those — and any other\n// non-numeric label — verbatim. Semantic versions get a single normalized "v"\n// prefix, so a raw "v3.4.0" tag and a bare "3.4.0" both render as "v3.4.0"\n// instead of doubling up to "vv3.4.0".',
+        '// Format panel versions for display. Dev builds show a Chinese label with\n// the first eight commit characters; semantic versions get one normalized "v"\n// prefix so already-prefixed tags are not doubled.',
+    )
     if "const devBuild = /^dev\\+([0-9a-f]{7,40})$/i.exec(v);" not in text:
         needle = "  if (!v) return '';\n"
         replacement = (
@@ -134,6 +138,20 @@ def use_fork_dev_release() -> None:
             raise RuntimeError("Could not find panel version formatter in panel-version.ts")
         text = text.replace(needle, replacement, 1)
     panel_version.write_text(text, encoding="utf-8", newline="\n")
+
+    panel_version_test = ROOT / "frontend/src/test/panel-version.test.ts"
+    text = panel_version_test.read_text(encoding="utf-8")
+    text = text.replace(
+        "it('shows dev builds verbatim without a v prefix', () => {",
+        "it('labels dev builds in Chinese with a short commit', () => {",
+    )
+    text = text.replace(
+        "expect(formatPanelVersion('dev+1a2b3c4d')).toBe('dev+1a2b3c4d');",
+        "expect(formatPanelVersion('dev+1a2b3c4d')).toBe('开发版 1a2b3c4d');",
+    )
+    if "expect(formatPanelVersion('dev+1a2b3c4d')).toBe('开发版 1a2b3c4d');" not in text:
+        raise RuntimeError("Could not localize the panel-version formatter test expectation")
+    panel_version_test.write_text(text, encoding="utf-8", newline="\n")
 
     panel = ROOT / "internal/web/service/panel/panel.go"
     text = panel.read_text(encoding="utf-8")
@@ -187,7 +205,9 @@ def use_fork_dev_release() -> None:
 
           此版本已移除赞助展示，并提供中文安装交互提示。
 
-          这是滚动开发版，随官网更新，不是正式稳定版。"''',
+          这是滚动开发版，随官网更新，不是正式稳定版。
+
+          <!-- commit=${COMMIT} -->"''',
     )
     text = text.replace(
         "构建时间=$(date -u +%Y-%m-%dT%H:%M:%SZ)",
@@ -197,6 +217,17 @@ def use_fork_dev_release() -> None:
     text = text.replace('"开发版构建 ${short}"', '"开发版 ${short}"')
     if "Rolling development build — installs via the panel's Dev update channel." in text:
         raise RuntimeError("release.yml still contains the upstream English dev-release notes")
+    release_upload = "          retry gh release upload dev-latest dev-artifacts/*.tar.gz dev-artifacts/*.zip dev-artifacts/*.sha256 --clobber"
+    release_target_update = '''          # Keep GitHub's release comparison target aligned with the moved tag.
+          release_id=$(retry gh release view dev-latest --json databaseId --jq .databaseId)
+          retry gh api --method PATCH "repos/${GITHUB_REPOSITORY}/releases/${release_id}" \\
+            --field "target_commitish=${COMMIT}"
+
+'''
+    if release_target_update.strip() not in text:
+        if release_upload not in text:
+            raise RuntimeError("Could not find the dev release upload step to update its target metadata")
+        text = text.replace(release_upload, release_target_update + release_upload, 1)
     release.write_text(text, encoding="utf-8", newline="\n")
 
 
