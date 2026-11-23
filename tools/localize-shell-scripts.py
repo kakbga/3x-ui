@@ -6,6 +6,7 @@ variables, and program output consumed by the scripts remain unchanged.
 """
 
 from pathlib import Path
+import re
 import sys
 
 
@@ -146,6 +147,16 @@ TRANSLATIONS = {
         "https://raw.githubusercontent.com/MHSanaei/3x-ui/${script_ref}/x-ui.sh": "https://raw.githubusercontent.com/kakbga/3x-ui/main/x-ui.sh",
     },
     "x-ui.sh": {
+        "Panel state: ${green}Running${plain}": "面板状态：${green}运行中${plain}",
+        "Panel state: ${yellow}Not Running${plain}": "面板状态：${yellow}未运行${plain}",
+        "Panel state: ${red}Not Installed${plain}": "面板状态：${red}未安装${plain}",
+        "Start automatically: ${green}Managed by Docker${plain}": "开机自启：${green}由 Docker 管理${plain}",
+        "Start automatically: ${green}Yes${plain}": "开机自启：${green}是${plain}",
+        "Start automatically: ${red}No${plain}": "开机自启：${red}否${plain}",
+        "xray state: ${green}Running${plain}": "Xray 状态：${green}运行中${plain}",
+        "xray state: ${red}Not Running${plain}": "Xray 状态：${red}未运行${plain}",
+        "mtproto inbound ${id} (${bind}): ${green}Running${plain}": "MTProto 入站 ${id} (${bind})：${green}运行中${plain}",
+        "mtproto inbound ${id} (${bind}): ${red}Not Running${plain}": "MTProto 入站 ${id} (${bind})：${red}未运行${plain}",
         "Restart the panel, Attention: Restarting the panel will also restart xray": "确认重启面板？注意：重启面板也会同时重启 Xray",
         "Press enter to return to the main menu: ": "按回车键返回主菜单： ",
         "Cancelled": "已取消",
@@ -195,6 +206,58 @@ TRANSLATIONS = {
 }
 
 
+MENU_LABELS = {
+    "Exit Script": "退出脚本",
+    "Start": "启动",
+    "Stop": "停止",
+    "Restart": "重启",
+    "Restart Xray": "重启 Xray",
+    "Check Status": "查看运行状态",
+    "Enable Autostart": "启用开机自启",
+    "Disable Autostart": "禁用开机自启",
+    "Cloudflare SSL Certificate": "Cloudflare SSL 证书",
+    "Enable BBR": "启用 BBR",
+    "Update Geo Files": "更新 Geo 数据文件",
+    "Speedtest by Ookla": "Ookla 网络测速",
+}
+
+
+def localize_xui_menu(text: str) -> str:
+    """Translate upstream menu labels and avoid fixed-width box alignment."""
+    function = re.search(r"(?m)^show_menu\(\) \{\s*$", text)
+    if not function:
+        raise RuntimeError("Could not locate show_menu() in x-ui.sh")
+    output = re.search(r'(?m)^    echo -e "\s*$', text[function.end() :])
+    if not output:
+        raise RuntimeError("Could not locate the menu output in show_menu()")
+    output_start = function.end() + output.start()
+    status = re.search(r"(?m)^    show_status\s*$", text[output_start + output.end() :])
+    if not status:
+        raise RuntimeError("Could not locate show_status after the menu output")
+    status_start = output_start + output.end() + status.start()
+    block = text[output_start : status_start]
+    entries = []
+    for line in block.splitlines():
+        item = re.search(r"\$\{green\}(\d+)\.\$\{plain\}\s*(.*)$", line)
+        if not item:
+            continue
+        number = int(item.group(1))
+        label = re.sub(r"[│|]\s*$", "", item.group(2)).strip()
+        entries.append((number, MENU_LABELS.get(label, label)))
+    if not entries:
+        raise RuntimeError("No numbered menu entries found in x-ui.sh")
+
+    lines = ["${green}3X-UI 面板管理脚本${plain}", "════════════════════════════════════"]
+    separators_before = {7, 12, 18, 20, 26}
+    for number, label in entries:
+        if number in separators_before:
+            lines.append("────────────────────────────────────")
+        lines.append(f"${{green}}{number}.${{plain}} {label}")
+    lines.append("════════════════════════════════════")
+    menu = '    echo -e "\n' + "\n".join(lines) + '\n"\n'
+    return text[:output_start] + menu + text[status_start:]
+
+
 def main() -> int:
     if len(sys.argv) != 3:
         print("usage: localize-shell-scripts.py UPSTREAM_DIR OUTPUT_DIR", file=sys.stderr)
@@ -204,6 +267,8 @@ def main() -> int:
         text = (source_dir / name).read_text(encoding="utf-8")
         for source, localized in replacements.items():
             text = text.replace(source, localized)
+        if name == "x-ui.sh":
+            text = localize_xui_menu(text)
         (output_dir / name).write_text(text, encoding="utf-8", newline="\n")
     return 0
 
