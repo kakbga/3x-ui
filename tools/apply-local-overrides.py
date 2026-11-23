@@ -90,21 +90,25 @@ def use_fork_dev_release() -> None:
         fi
     fi'''
     new_default = '''    else
-        tag_version="dev-latest"
-        echo -e "${green}正在使用本仓库滚动版本：${tag_version}${plain}"
+        latest_url=$(${curl_bin} -fLsS --retry 3 --retry-delay 2 --connect-timeout 15 -o /dev/null -w '%{url_effective}' "https://github.com/kakbga/3x-ui/releases/latest")
+        if [[ $? -ne 0 || -z "$latest_url" ]]; then
+            _fail "ERROR: Failed to fetch the latest stable release from kakbga/3x-ui"
+        fi
+        tag_version="${latest_url##*/}"
+        echo -e "${green}正在使用本仓库最新正式版：${tag_version}${plain}"
     fi'''
     text = text.replace(old_default, new_default)
     text = text.replace(
         'echo -e "${green}Using your fork\'s rolling build: ${tag_version}${plain}"',
         'echo -e "${green}正在使用本仓库滚动版本：${tag_version}${plain}"',
     )
-    if 'tag_version="dev-latest"' not in text:
-        raise RuntimeError("Could not switch update.sh's default channel to dev-latest")
-    if "https://api.github.com/repos/MHSanaei/3x-ui/releases/latest" in text:
-        raise RuntimeError("Could not switch update.sh's default channel to dev-latest")
+    if '"https://github.com/kakbga/3x-ui/releases/latest"' not in text:
+        raise RuntimeError("Could not switch update.sh's default channel to this fork's latest stable release")
+    if 'tag_version="dev-latest"' in text:
+        raise RuntimeError("update.sh's default channel must stay on the latest stable release")
     text = text.replace("https://github.com/MHSanaei/3x-ui/releases/download/", "https://github.com/kakbga/3x-ui/releases/download/")
     text = text.replace("https://raw.githubusercontent.com/MHSanaei/3x-ui/", "https://raw.githubusercontent.com/kakbga/3x-ui/")
-    text = text.replace("# rolling dev-latest pre-release). Empty keeps the default latest-stable flow.", "# rolling dev-latest pre-release). Empty selects this fork's rolling build.")
+    text = text.replace("# rolling dev-latest pre-release). Empty keeps the default latest-stable flow.", "# rolling dev-latest pre-release). Empty selects this fork's latest stable release.")
     if "https://github.com/MHSanaei/3x-ui/releases/" in text:
         raise RuntimeError("update.sh still points at upstream release assets")
     update.write_text(text, encoding="utf-8", newline="\n")
