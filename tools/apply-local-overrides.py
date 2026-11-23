@@ -143,14 +143,20 @@ def use_fork_dev_release() -> None:
           built=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
           Automated per-commit build from main. Not a stable release."''',
-        '''          notes="滚动开发版，通过面板的开发版更新通道安装。
+        '''          notes="个人自用构建，基于 3X-UI 官网 main 分支编译。
 
-          提交=${COMMIT}
-          构建时间=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          构建时间（北京时间，UTC+8）=$(TZ=Asia/Shanghai date '+%Y-%m-%d %H:%M:%S')
 
-          由 main 分支自动构建，非稳定版。"''',
+          此版本已移除赞助展示，并提供中文安装交互提示。
+
+          这是滚动开发版，随官网更新，不是正式稳定版。"''',
     )
-    text = text.replace('"Dev build ${short}"', '"开发版构建 ${short}"')
+    text = text.replace(
+        "构建时间=$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+        "构建时间（北京时间，UTC+8）=$(TZ=Asia/Shanghai date '+%Y-%m-%d %H:%M:%S')",
+    )
+    text = text.replace('"Dev build ${short}"', '"开发版 ${short}"')
+    text = text.replace('"开发版构建 ${short}"', '"开发版 ${short}"')
     if "Rolling development build — installs via the panel's Dev update channel." in text:
         raise RuntimeError("release.yml still contains the upstream English dev-release notes")
     release.write_text(text, encoding="utf-8", newline="\n")
