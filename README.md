@@ -74,13 +74,13 @@ Built as an enhanced fork of the original X-UI project, 3X-UI adds broader proto
 ## Quick Start
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/kakbga/3x-ui/master/install.sh)
 ```
 
 To install a specific version, append its tag (e.g. `v1.0.0`):
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh) v1.0.0
+bash <(curl -Ls https://raw.githubusercontent.com/kakbga/3x-ui/master/install.sh) v1.0.0
 ```
 
 To install the rolling **dev** build (latest per-commit pre-release from `main`, not a stable release), pass `dev-latest`:
