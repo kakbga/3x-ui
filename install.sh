@@ -112,7 +112,7 @@ select_panel_port() {
     else
         while true; do
             if ! IFS= read -rp "是否自定义面板端口？（否则将随机分配端口）[y/N]： " confirm; then
-                echo 'Cannot read the panel port confirmation; aborting.' >&2
+                echo '无法读取端口确认输入，安装已中止。' >&2
                 return 1
             fi
             confirm="${confirm#"${confirm%%[![:space:]]*}"}"
@@ -120,7 +120,7 @@ select_panel_port() {
             case "${confirm,,}" in
                 y | yes) break ;;
                 n | no | '') confirm=n; break ;;
-                *) echo 'Please answer yes or no (Enter defaults to No).' >&2 ;;
+                *) echo '请输入 yes 或 no（直接回车默认为 no）。' >&2 ;;
             esac
         done
     fi
@@ -128,16 +128,16 @@ select_panel_port() {
     if [[ "$confirm" == n ]]; then
         for ((attempt = 0; attempt < 100; attempt++)); do
             if ! port=$(shuf -i 1024-62000 -n 1); then
-                echo 'Failed to generate a random panel port.' >&2
+                echo '无法生成随机面板端口。' >&2
                 return 1
             fi
             if port=$(normalize_panel_port "$port") && ! is_port_in_use "$port"; then
-                echo "Generated random port: $port" >&2
+                echo "已生成随机端口：$port" >&2
                 printf '%s\n' "$port"
                 return 0
             fi
         done
-        echo 'Could not find an available random panel port; aborting.' >&2
+        echo '未找到可用的随机面板端口，安装已中止。' >&2
         return 1
     fi
 
@@ -145,15 +145,15 @@ select_panel_port() {
         if [[ "$NONINTERACTIVE" == 1 ]]; then
             port="$XUI_PANEL_PORT"
         elif ! read -rp '请设置面板端口：' port; then
-            echo 'Cannot read the custom panel port; aborting.' >&2
+            echo '无法读取自定义面板端口，安装已中止。' >&2
             return 1
         fi
         if ! port=$(normalize_panel_port "$port"); then
-            echo 'Invalid port. Enter a number between 1 and 65535.' >&2
+            echo '端口无效，请输入 1 到 65535 之间的数字。' >&2
         elif is_port_in_use "$port"; then
-            echo "Port $port is already in use. Choose another panel port." >&2
+            echo "端口 $port 已被占用，请更换面板端口。" >&2
         else
-            echo "Your Panel Port is: $port" >&2
+            echo "面板端口：$port" >&2
             printf '%s\n' "$port"
             return 0
         fi
@@ -237,13 +237,13 @@ write_install_result() {
         printf 'XUI_DB_TYPE=%q\n' "$dbtype"
     } > "$result_file"; then
         umask "$prev_umask"
-        echo -e "${yellow}Warning: failed to write ${result_file}.${plain}" >&2
+        echo -e "${yellow}警告：无法写入安装结果文件 ${result_file}。${plain}" >&2
         return 1
     fi
     umask "$prev_umask"
     chmod 600 "$result_file" 2> /dev/null
     chown root:root "$result_file" 2> /dev/null || true
-    echo -e "${green}Install result written to ${result_file} (mode 600).${plain}"
+    echo -e "${green}安装结果已写入 ${result_file}（权限 600）。${plain}"
 }
 
 # RHEL-family initdb writes pg_hba.conf host rules with ident auth, which
@@ -300,7 +300,7 @@ pg_apt_install_pgdg_server() {
         rm -f "${list}"
     done
     apt-get update >&2 || true
-    echo -e "${yellow}PostgreSQL ${PG_TARGET_MAJOR} is not available for this system; installing the distribution's PostgreSQL instead.${plain}" >&2
+    echo -e "${yellow}此系统无法使用 PostgreSQL ${PG_TARGET_MAJOR}，将改为安装系统仓库提供的版本。${plain}" >&2
     return 1
 }
 
@@ -326,7 +326,7 @@ pg_el_install_pgdg_server() {
         dnf -qy module reset postgresql > /dev/null 2>&1 || true
         dnf remove -y -q pgdg-redhat-repo >&2 || true
     fi
-    echo -e "${yellow}PostgreSQL ${PG_TARGET_MAJOR} is not available for this system; installing the distribution's PostgreSQL instead.${plain}" >&2
+    echo -e "${yellow}此系统无法使用 PostgreSQL ${PG_TARGET_MAJOR}，将改为安装系统仓库提供的版本。${plain}" >&2
     return 1
 }
 
@@ -381,7 +381,7 @@ install_postgres_local() {
             rc-service postgresql start >&2 || return 1
             ;;
         *)
-            echo -e "${red}Unsupported distro for automatic PostgreSQL install: ${release}${plain}" >&2
+            echo -e "${red}不支持在此发行版上自动安装 PostgreSQL：${release}${plain}" >&2
             return 1
             ;;
     esac
@@ -420,7 +420,7 @@ install_postgres_local() {
     sudo -u postgres psql -c "ALTER USER \"${pg_user}\" WITH PASSWORD '${pg_pass}';" >&2 || return 1
 
     pg_ensure_hba_password_auth "${pg_db}" \
-        || echo -e "${yellow}Warning: could not update pg_hba.conf; PostgreSQL may reject the panel's TCP login (ident auth).${plain}" >&2
+        || echo -e "${yellow}警告：无法更新 pg_hba.conf，PostgreSQL 可能会因 ident 认证拒绝面板的 TCP 登录。${plain}" >&2
 
     local pg_pass_enc
     pg_pass_enc=$(printf '%s' "${pg_pass}" | sed -e 's/%/%25/g' -e 's/:/%3A/g' -e 's/@/%40/g' -e 's|/|%2F|g' -e 's/?/%3F/g' -e 's/#/%23/g')
@@ -437,7 +437,7 @@ PG_PORT=${pg_port}
 PG_DB=${pg_db}
 EOF
             umask "${prev_umask}"
-            echo -e "${red}Failed to write PostgreSQL credentials to ${PG_CRED_FILE}${plain}" >&2
+            echo -e "${red}无法将 PostgreSQL 凭据写入 ${PG_CRED_FILE}${plain}" >&2
             return 1
         fi
         umask "${prev_umask}"
@@ -451,7 +451,7 @@ ensure_pg_client() {
     if command -v pg_dump > /dev/null 2>&1 && command -v pg_restore > /dev/null 2>&1; then
         return 0
     fi
-    echo -e "${yellow}Installing PostgreSQL client tools (pg_dump/pg_restore) for in-panel backup...${plain}" >&2
+    echo -e "${yellow}正在安装 PostgreSQL 客户端工具（pg_dump/pg_restore），以支持面板内备份…${plain}" >&2
     case "${release}" in
         ubuntu | debian | armbian)
             apt-get update >&2 && apt-get install -y -q postgresql-client >&2 || return 1
@@ -483,14 +483,14 @@ ensure_pg_client() {
 }
 
 install_acme() {
-    echo -e "${green}Installing acme.sh for SSL certificate management...${plain}"
+    echo -e "${green}正在安装 acme.sh 以管理 SSL 证书…${plain}"
     cd ~ || return 1
     curl -s https://get.acme.sh | sh > /dev/null 2>&1
     if [ $? -ne 0 ]; then
         echo -e "${red}安装 acme.sh 失败${plain}"
         return 1
     else
-        echo -e "${green}acme.sh installed successfully${plain}"
+        echo -e "${green}acme.sh 安装成功${plain}"
     fi
     return 0
 }
@@ -501,13 +501,13 @@ setup_ssl_certificate() {
     local existing_port="$3"
     local existing_webBasePath="$4"
 
-    echo -e "${green}Setting up SSL certificate...${plain}"
+    echo -e "${green}正在配置 SSL 证书…${plain}"
 
     # Check if acme.sh is installed
     if ! command -v ~/.acme.sh/acme.sh &> /dev/null; then
         install_acme
         if [ $? -ne 0 ]; then
-            echo -e "${yellow}安装 acme.sh 失败, skipping SSL setup${plain}"
+            echo -e "${yellow}安装 acme.sh 失败，跳过 SSL 配置${plain}"
             return 1
         fi
     fi
@@ -517,15 +517,15 @@ setup_ssl_certificate() {
     mkdir -p "$certPath"
 
     # Issue certificate
-    echo -e "${green}Issuing SSL certificate for ${domain}...${plain}"
-    echo -e "${yellow}Note: Port 80 must be open and accessible from the internet${plain}"
+    echo -e "${green}正在为 ${domain} 申请 SSL 证书…${plain}"
+    echo -e "${yellow}提示：必须开放 80 端口，并确保可从公网访问。${plain}"
 
     ~/.acme.sh/acme.sh --set-default-ca --server letsencrypt --force > /dev/null 2>&1
     ~/.acme.sh/acme.sh --issue -d ${domain} $(acme_listen_flag) --standalone --httpport 80 --force
 
     if [ $? -ne 0 ]; then
-        echo -e "${yellow}Failed to issue certificate for ${domain}${plain}"
-        echo -e "${yellow}Please ensure port 80 is open and try again later with: x-ui${plain}"
+        echo -e "${yellow}无法为 ${domain} 申请证书${plain}"
+        echo -e "${yellow}请确认 80 端口已开放，之后可运行 x-ui 再次尝试。${plain}"
         rm -rf ~/.acme.sh/${domain} ~/.acme.sh/${domain}_ecc 2> /dev/null
         rm -rf "$certPath" 2> /dev/null
         return 1
@@ -538,7 +538,7 @@ setup_ssl_certificate() {
         --reloadcmd "systemctl restart x-ui" > /dev/null 2>&1
 
     if [ $? -ne 0 ]; then
-        echo -e "${yellow}Failed to install certificate${plain}"
+        echo -e "${yellow}证书安装失败${plain}"
         return 1
     fi
 
@@ -554,10 +554,10 @@ setup_ssl_certificate() {
 
     if [[ -f "$webCertFile" && -f "$webKeyFile" ]]; then
         ${xui_folder}/x-ui cert -webCert "$webCertFile" -webCertKey "$webKeyFile" > /dev/null 2>&1
-        echo -e "${green}SSL certificate installed and configured successfully!${plain}"
+        echo -e "${green}SSL 证书已成功安装并配置！${plain}"
         return 0
     else
-        echo -e "${yellow}Certificate files not found${plain}"
+        echo -e "${yellow}未找到证书文件${plain}"
         return 1
     fi
 }
@@ -609,7 +609,7 @@ setup_ip_certificate() {
     # Choose port for HTTP-01 listener (default 80, prompt override)
     local WebPort=""
     prompt_or_default WebPort "ACME HTTP-01 验证监听端口（默认 80）：" "80" XUI_ACME_HTTP_PORT
-    WebPort="${WebPort:-80}"
+    WebPort="${Web端口：-80}"
     if ! [[ "${WebPort}" =~ ^[0-9]+$ ]] || ((WebPort < 1 || WebPort > 65535)); then
         echo -e "${red}端口无效，将使用默认端口 80。${plain}"
         WebPort=80
@@ -726,14 +726,14 @@ ssl_cert_issue() {
 
     # check for acme.sh first
     if ! command -v ~/.acme.sh/acme.sh &> /dev/null; then
-        echo "acme.sh could not be found. Installing now..."
+        echo "未找到 acme.sh，正在安装…"
         cd ~ || return 1
         curl -s https://get.acme.sh | sh
         if [ $? -ne 0 ]; then
             echo -e "${red}安装 acme.sh 失败${plain}"
             return 1
         else
-            echo -e "${green}acme.sh installed successfully${plain}"
+            echo -e "${green}acme.sh 安装成功${plain}"
         fi
     fi
 
@@ -742,7 +742,7 @@ ssl_cert_issue() {
     if [[ "$NONINTERACTIVE" == "1" ]]; then
         domain="${XUI_DOMAIN// /}"
         if [[ -z "$domain" ]] || ! is_domain "$domain"; then
-            echo -e "${red}XUI_SSL_MODE=domain requires a valid XUI_DOMAIN (got: '${XUI_DOMAIN:-}').${plain}"
+            echo -e "${red}XUI_SSL_MODE=domain 需要有效的 XUI_DOMAIN（当前值：'${XUI_DOMAIN:-}'）。${plain}"
             return 1
         fi
     else
@@ -751,19 +751,19 @@ ssl_cert_issue() {
             domain="${domain// /}" # Trim whitespace
 
             if [[ -z "$domain" ]]; then
-                echo -e "${red}Domain name cannot be empty. Please try again.${plain}"
+                echo -e "${red}域名不能为空，请重试。${plain}"
                 continue
             fi
 
             if ! is_domain "$domain"; then
-                echo -e "${red}Invalid domain format: ${domain}. Please enter a valid domain name.${plain}"
+                echo -e "${red}域名格式无效：${domain}。请输入有效域名。${plain}"
                 continue
             fi
 
             break
         done
     fi
-    echo -e "${green}Your domain is: ${domain}, checking it...${plain}"
+    echo -e "${green}当前域名：${domain}，正在检查…${plain}"
     SSL_ISSUED_DOMAIN="${domain}"
 
     # detect existing certificate and reuse it only if its files are actually
@@ -844,9 +844,9 @@ ssl_cert_issue() {
         read -rp "是否修改 ACME 的 --reloadcmd？(y/n)：" setReloadcmd
     fi
     if [[ "$setReloadcmd" == "y" || "$setReloadcmd" == "Y" ]]; then
-        echo -e "\n${green}\t1.${plain} Preset: systemctl reload nginx ; systemctl restart x-ui"
-        echo -e "${green}\t2.${plain} Input your own command"
-        echo -e "${green}\t0.${plain} Keep default reloadcmd"
+        echo -e "\n${green}\t1.${plain} 预设：systemctl reload nginx ; systemctl restart x-ui"
+        echo -e "${green}\t2.${plain} 输入自定义命令"
+        echo -e "${green}\t0.${plain} 保持默认续期命令"
         read -rp "请选择：" choice
         case "$choice" in
             1)
@@ -1157,7 +1157,7 @@ config_after_install() {
                 if (failed || credentials != 1 || ports != 1 || paths != 1 || (path != "" && path !~ /^\//)) exit 1
                 print path
             }'); then
-        echo -e "${red}Unable to read webBasePath; leaving existing settings unchanged.${plain}" >&2
+        echo -e "${red}无法读取面板访问路径，将保留现有设置。${plain}" >&2
         return 1
     fi
     existing_webBasePath=${existing_webBasePath#/}
@@ -1190,7 +1190,7 @@ config_after_install() {
             # displayed access URL. Fall back to XUI_SERVER_IP or leave blank.
             server_ip="${XUI_SERVER_IP:-}"
         else
-            echo -e "${yellow}Could not auto-detect server IP from any provider.${plain}"
+            echo -e "${yellow}无法从任何服务商自动检测服务器 IP。${plain}"
             while [[ -z "$server_ip" ]]; do
                 read -rp "请输入服务器公网 IPv4 地址：" server_ip
                 server_ip="${server_ip// /}"
@@ -1223,7 +1223,7 @@ config_after_install() {
                     db_choice="1"
                 fi
             else
-                read -rp "Choose [1]: " db_choice
+                read -rp "请选择 [默认 1]：" db_choice
                 db_choice="${db_choice:-1}"
             fi
             if [[ "$db_choice" == "2" ]]; then
@@ -1250,7 +1250,7 @@ config_after_install() {
                             db_label="PostgreSQL (external)"
                             break
                         fi
-                        echo -e "${yellow}Installing PostgreSQL locally (non-interactive)...${plain}"
+                        echo -e "${yellow}正在以非交互方式在本机安装 PostgreSQL…${plain}"
                         local pg_cred_file
                         pg_cred_file=$(mktemp 2> /dev/null) || pg_cred_file=$(mktemp -t x-ui-pg-creds.XXXXXXXX)
                         if [[ -n "${pg_cred_file}" ]] && xui_dsn=$(PG_CRED_FILE="${pg_cred_file}" install_postgres_local); then
@@ -1264,27 +1264,27 @@ config_after_install() {
                             break
                         fi
                         rm -f "${pg_cred_file}"
-                        echo -e "${red}PostgreSQL installation failed in non-interactive mode; aborting.${plain}"
-                        echo -e "${yellow}Set XUI_DB_DSN to use an existing server, or XUI_DB_TYPE=sqlite.${plain}"
+                        echo -e "${red}非交互模式下 PostgreSQL 安装失败，安装已中止。${plain}"
+                        echo -e "${yellow}设置 XUI_DB_DSN 以使用现有数据库服务器，或设置 XUI_DB_TYPE=sqlite。${plain}"
                         exit 1
                     fi
                     echo ""
-                    echo -e "  1) Install PostgreSQL locally and create a dedicated user/db (recommended)"
-                    echo -e "  2) Use an existing PostgreSQL server (enter DSN)"
-                    read -rp "Choose [1]: " pg_mode
+                    echo -e "  1) 在本机安装 PostgreSQL 并创建专用用户和数据库（推荐）"
+                    echo -e "  2) 使用现有 PostgreSQL 服务器（输入 DSN）"
+                    read -rp "请选择 [默认 1]：" pg_mode
                     pg_mode="${pg_mode:-1}"
                     if [[ "$pg_mode" == "2" ]]; then
                         while [[ -z "$xui_dsn" ]]; do
-                            read -rp "Enter PostgreSQL DSN (postgres://user:pass@host:port/dbname?sslmode=disable): " xui_dsn
+                            read -rp "请输入 PostgreSQL DSN（postgres://用户:密码@主机:端口/数据库名?sslmode=disable）：" xui_dsn
                             xui_dsn="${xui_dsn// /}"
                         done
                         db_label="PostgreSQL (external)"
                     else
-                        echo -e "${yellow}Installing PostgreSQL — this may take a moment...${plain}"
+                        echo -e "${yellow}正在安装 PostgreSQL，请稍候…${plain}"
                         local pg_cred_file
                         pg_cred_file=$(mktemp 2> /dev/null) || pg_cred_file=$(mktemp -t x-ui-pg-creds.XXXXXXXX)
                         if [[ -z "${pg_cred_file}" ]]; then
-                            echo -e "${red}Failed to create temporary credentials file.${plain}"
+                            echo -e "${red}无法创建临时凭据文件。${plain}"
                             xui_dsn=""
                             continue
                         fi
@@ -1299,17 +1299,17 @@ config_after_install() {
                         else
                             rm -f "${pg_cred_file}"
                             echo ""
-                            echo -e "${red}PostgreSQL installation failed.${plain}"
-                            echo -e "  1) Retry local install"
-                            echo -e "  2) Enter an external DSN instead"
-                            echo -e "  3) Abort install"
-                            echo -e "  4) Fall back to SQLite"
-                            read -rp "Choose [1]: " pg_fail
+                            echo -e "${red}PostgreSQL 安装失败。${plain}"
+                            echo -e "  1) 重试本机安装"
+                            echo -e "  2) 改为输入外部数据库 DSN"
+                            echo -e "  3) 中止安装"
+                            echo -e "  4) 改用 SQLite"
+                            read -rp "请选择 [默认 1]：" pg_fail
                             pg_fail="${pg_fail:-1}"
                             case "$pg_fail" in
                                 2) pg_mode="2" ;;
                                 3)
-                                    echo -e "${red}Install aborted.${plain}"
+                                    echo -e "${red}安装已中止。${plain}"
                                     exit 1
                                     ;;
                                 4)
@@ -1333,7 +1333,7 @@ EOF
                     umask 022
                     export XUI_DB_TYPE=postgres
                     export XUI_DB_DSN="${xui_dsn}"
-                    ensure_pg_client || echo -e "${yellow}⚠ Could not install pg_dump/pg_restore. In-panel database backup/restore will be unavailable until you install the postgresql-client package.${plain}"
+                    ensure_pg_client || echo -e "${yellow}⚠ 无法安装 pg_dump/pg_restore。在安装 postgresql-client 软件包前，面板内的数据库备份和恢复功能不可用。${plain}"
                 fi
             fi
 
@@ -1348,7 +1348,7 @@ EOF
                 ! grep -Fxq "Port set successfully: ${config_port}" <<< "$settings_output" ||
                 ! grep -Fxq 'Username and password updated successfully' <<< "$settings_output" ||
                 ! grep -Fxq 'Base URI path set successfully' <<< "$settings_output"; then
-                echo 'Failed to configure panel settings; installation aborted.' >&2
+                echo '面板设置配置失败，安装已中止。' >&2
                 exit 1
             fi
 
@@ -1371,13 +1371,13 @@ EOF
             echo -e "${green}═══════════════════════════════════════════${plain}"
             echo -e "${green}     面板安装完成！         ${plain}"
             echo -e "${green}═══════════════════════════════════════════${plain}"
-            echo -e "${green}Username:    ${config_username}${plain}"
-            echo -e "${green}Password:    ${config_password}${plain}"
-            echo -e "${green}Port:        ${config_port}${plain}"
-            echo -e "${green}WebBasePath: ${config_webBasePath}${plain}"
-            echo -e "${green}Database:    ${db_label}${plain}"
-            echo -e "${green}Access URL:  ${SSL_SCHEME}://${SSL_HOST}:${config_port}/${config_webBasePath}${plain}"
-            echo -e "${green}API Token:   ${config_apiToken}${plain}"
+            echo -e "${green}用户名：    ${config_username}${plain}"
+            echo -e "${green}密码：    ${config_password}${plain}"
+            echo -e "${green}端口：        ${config_port}${plain}"
+            echo -e "${green}面板访问路径： ${config_webBasePath}${plain}"
+            echo -e "${green}数据库：    ${db_label}${plain}"
+            echo -e "${green}访问地址：  ${SSL_SCHEME}://${SSL_HOST}:${config_port}/${config_webBasePath}${plain}"
+            echo -e "${green}API 令牌：   ${config_apiToken}${plain}"
             echo -e "${green}═══════════════════════════════════════════${plain}"
             echo -e "${yellow}⚠ 重要：请妥善保存以上登录凭据！${plain}"
             if [[ "$SSL_SCHEME" == "https" ]]; then
@@ -1388,30 +1388,30 @@ EOF
 
             if [[ "$db_choice" == "2" ]]; then
                 echo ""
-                echo -e "${green}PostgreSQL backup & restore is built into the panel:${plain}"
-                echo -e "  ${blue}${SSL_SCHEME}://${SSL_HOST}:${config_port}/${config_webBasePath}${plain} → Backup & Restore"
-                echo -e "${yellow}  Back Up downloads a pg_dump .dump file; Restore reloads it via pg_restore.${plain}"
+                echo -e "${green}面板内置 PostgreSQL 备份和恢复功能：${plain}"
+                echo -e "  ${blue}${SSL_SCHEME}://${SSL_HOST}:${config_port}/${config_webBasePath}${plain} → 备份和恢复"
+                echo -e "${yellow}  “备份”会下载 pg_dump 生成的 .dump 文件；“恢复”会通过 pg_restore 导入该文件。${plain}"
             fi
 
             if [[ "$db_choice" == "2" && "$pg_local_installed" == "1" ]]; then
                 echo ""
                 echo -e "${green}═══════════════════════════════════════════${plain}"
-                echo -e "${green}     PostgreSQL Credentials               ${plain}"
+                echo -e "${green}     PostgreSQL 凭据               ${plain}"
                 echo -e "${green}═══════════════════════════════════════════${plain}"
-                echo -e "${green}DB Name:    ${PG_DB}${plain}"
-                echo -e "${green}Username:   ${PG_USER}${plain}"
-                echo -e "${green}Password:   ${PG_PASS}${plain}"
-                echo -e "${green}Host:       ${PG_HOST}${plain}"
-                echo -e "${green}Port:       ${PG_PORT}${plain}"
-                echo -e "${green}DSN:        ${xui_dsn}${plain}"
-                echo -e "${green}Env file:   ${xui_env_file}${plain}"
+                echo -e "${green}数据库名：${PG_DB}${plain}"
+                echo -e "${green}用户名：   ${PG_USER}${plain}"
+                echo -e "${green}密码：   ${PG_PASS}${plain}"
+                echo -e "${green}主机：${PG_HOST}${plain}"
+                echo -e "${green}端口：       ${PG_PORT}${plain}"
+                echo -e "${green}DSN：${xui_dsn}${plain}"
+                echo -e "${green}环境配置文件：${xui_env_file}${plain}"
                 echo -e "${green}-------------------------------------------${plain}"
-                echo -e "${green}Connect from this server:${plain}"
-                echo -e "  ${blue}sudo -u postgres psql -d ${PG_DB}${plain}      (as the postgres superuser)"
+                echo -e "${green}在此服务器上连接：${plain}"
+                echo -e "  ${blue}sudo -u postgres psql -d ${PG_DB}${plain}（以 postgres 超级用户身份连接）"
                 echo -e "  ${blue}PGPASSWORD='${PG_PASS}' psql -h ${PG_HOST} -p ${PG_PORT} -U ${PG_USER} -d ${PG_DB}${plain}"
                 echo -e "${green}═══════════════════════════════════════════${plain}"
-                echo -e "${yellow}⚠ The panel reads these credentials from ${xui_env_file}.${plain}"
-                echo -e "${yellow}⚠ Save the password — it is not stored anywhere else in plain text.${plain}"
+                echo -e "${yellow}⚠ 面板从 ${xui_env_file} 读取这些凭据。${plain}"
+                echo -e "${yellow}⚠ 请保存好密码；明文密码不会存储在其他位置。${plain}"
                 unset PG_USER PG_PASS PG_HOST PG_PORT PG_DB
             fi
 
@@ -1424,9 +1424,9 @@ EOF
                 "${config_webBasePath}" "${SSL_SCHEME}" "${SSL_HOST}" "${config_apiToken}" "${db_type_out}"
         else
             local config_webBasePath=$(gen_random_string 18)
-            echo -e "${yellow}WebBasePath is missing or set to root. Generating a new one...${plain}"
+            echo -e "${yellow}面板访问路径为空或为根路径，正在生成新的路径…${plain}"
             ${xui_folder}/x-ui setting -webBasePath "${config_webBasePath}"
-            echo -e "${green}New WebBasePath: ${config_webBasePath}${plain}"
+            echo -e "${green}New 面板访问路径： ${config_webBasePath}${plain}"
 
             # If the panel is already installed but no certificate is configured, prompt for SSL now
             if [[ -z "${existing_cert}" ]]; then
@@ -1437,10 +1437,10 @@ EOF
                 echo -e "${yellow}Let's Encrypt 现在同时支持域名和 IP 地址证书！${plain}"
                 echo ""
                 prompt_and_setup_ssl "${existing_port}" "${config_webBasePath}" "${server_ip}"
-                echo -e "${green}Access URL:  ${SSL_SCHEME}://${SSL_HOST}:${existing_port}/${config_webBasePath}${plain}"
+                echo -e "${green}访问地址：  ${SSL_SCHEME}://${SSL_HOST}:${existing_port}/${config_webBasePath}${plain}"
             else
                 # If a cert already exists, just show the access URL
-                echo -e "${green}Access URL: https://${server_ip}:${existing_port}/${config_webBasePath}${plain}"
+                echo -e "${green}访问地址： https://${server_ip}:${existing_port}/${config_webBasePath}${plain}"
             fi
         fi
     else
@@ -1448,12 +1448,12 @@ EOF
             local config_username="${XUI_USERNAME:-$(gen_random_string 10)}"
             local config_password="${XUI_PASSWORD:-$(gen_random_string 10)}"
 
-            echo -e "${yellow}Default credentials detected. Security update required...${plain}"
+            echo -e "${yellow}检测到默认凭据，需要更新以提高安全性…${plain}"
             ${xui_folder}/x-ui setting -username "${config_username}" -password "${config_password}"
-            echo -e "Generated new random login credentials:"
+            echo -e "已生成新的随机登录凭据："
             echo -e "###############################################"
-            echo -e "${green}Username: ${config_username}${plain}"
-            echo -e "${green}Password: ${config_password}${plain}"
+            echo -e "${green}用户名： ${config_username}${plain}"
+            echo -e "${green}密码： ${config_password}${plain}"
             echo -e "###############################################"
 
             # Persist a machine-parseable credentials file for cloud-init / MOTD.
@@ -1464,7 +1464,7 @@ EOF
             write_install_result "${config_username}" "${config_password}" "${existing_port}" \
                 "${existing_webBasePath}" "${SSL_SCHEME}" "${SSL_HOST}" "${config_apiToken}" "${XUI_DB_TYPE:-sqlite}"
         else
-            echo -e "${green}Username, Password, and WebBasePath are properly set.${plain}"
+            echo -e "${green}用户名、密码和面板访问路径均已正确设置。${plain}"
         fi
 
         # Existing install: if no cert configured, prompt user for SSL setup
@@ -1478,7 +1478,7 @@ EOF
             echo -e "${yellow}Let's Encrypt 现在同时支持域名和 IP 地址证书！${plain}"
             echo ""
             prompt_and_setup_ssl "${existing_port}" "${existing_webBasePath}" "${server_ip}"
-            echo -e "${green}Access URL:  ${SSL_SCHEME}://${SSL_HOST}:${existing_port}/${existing_webBasePath}${plain}"
+            echo -e "${green}访问地址：  ${SSL_SCHEME}://${SSL_HOST}:${existing_port}/${existing_webBasePath}${plain}"
         else
             echo -e "${green}SSL 证书已配置，无需操作。${plain}"
         fi
@@ -1495,27 +1495,27 @@ EOF
 # abort the panel install.
 setup_fail2ban() {
     if [[ -n "${XUI_ENABLE_FAIL2BAN+x}" && "${XUI_ENABLE_FAIL2BAN}" != "true" ]]; then
-        echo -e "${yellow}XUI_ENABLE_FAIL2BAN=${XUI_ENABLE_FAIL2BAN}, skipping Fail2ban auto-setup.${plain}"
+        echo -e "${yellow}XUI_ENABLE_FAIL2BAN=${XUI_ENABLE_FAIL2BAN}，跳过 Fail2ban 自动配置。${plain}"
         return 0
     fi
 
     if [[ ! -x /usr/bin/x-ui ]]; then
-        echo -e "${yellow}x-ui CLI not found; skipping Fail2ban auto-setup.${plain}"
+        echo -e "${yellow}未找到 x-ui 命令行程序，跳过 Fail2ban 自动配置。${plain}"
         return 0
     fi
 
     # Scripts older than v3.4.0 have no setup-fail2ban and exit 0 from the
     # usage banner, which would read as success here.
     if ! grep -q '"setup-fail2ban")' /usr/bin/x-ui; then
-        echo -e "${yellow}This x-ui.sh predates 'x-ui setup-fail2ban'; skipping Fail2ban auto-setup.${plain}"
+        echo -e "${yellow}当前 x-ui.sh 版本不支持“x-ui setup-fail2ban”，跳过 Fail2ban 自动配置。${plain}"
         return 0
     fi
 
-    echo -e "${green}Setting up Fail2ban for the IP Limit feature...${plain}"
+    echo -e "${green}正在为 IP 限制功能配置 Fail2ban…${plain}"
     if /usr/bin/x-ui setup-fail2ban; then
-        echo -e "${green}Fail2ban setup complete.${plain}"
+        echo -e "${green}Fail2ban 配置完成。${plain}"
     else
-        echo -e "${yellow}Fail2ban setup did not finish; IP Limit stays disabled until you run 'x-ui' and open the IP Limit menu. Continuing.${plain}"
+        echo -e "${yellow}Fail2ban 配置未完成；在运行 x-ui 并打开“IP 限制”菜单前，该功能将保持禁用。继续安装。${plain}"
     fi
     return 0
 }
@@ -1556,12 +1556,12 @@ _xui_warn_unsupported_hardening() {
         fi
     done
     [[ -n "$missing" ]] || return 0
-    echo -e "${yellow}Note: systemd ${version} ignores part of the hardening in x-ui.service; the panel still starts.${plain}"
-    echo "      Not applied, needs a newer systemd: ${missing}."
+    echo -e "${yellow}提示：systemd ${version} 不支持 x-ui.service 的部分安全加固设置，但面板仍可启动。${plain}"
+    echo "      以下设置未生效，需要较新版本的 systemd：${missing}。"
     if [[ "$version" -lt 231 ]]; then
-        echo "      The panel's folders stay writable through ReadWriteDirectories=, the alias this script installs."
+        echo "      本脚本通过 ReadWriteDirectories= 别名保持面板目录可写。"
     fi
-    echo "      The rest of the hardening is in force. Upgrade systemd to apply the above."
+    echo "      其余安全加固已生效。升级 systemd 后即可应用上述设置。"
     return 0
 }
 
@@ -1641,9 +1641,9 @@ _xui_service_write_paths_dropin() {
         line="${line} -${escaped_path}"
     done
     if [[ -n "$whitespace_paths" ]]; then
-        echo "Warning: these folders contain whitespace and were left out of" >&2
-        echo "         10-xui-sandbox.conf: $whitespace_paths" >&2
-        echo "         The panel cannot write to them under the unit's sandbox." >&2
+        echo "警告：以下目录包含空格，未写入" >&2
+        echo "         10-xui-sandbox.conf：$whitespace_paths" >&2
+        echo "         在服务沙箱限制下，面板无法写入这些目录。" >&2
     fi
     line="${line# }"
     [[ -n "$line" ]] || return 1
@@ -1715,8 +1715,8 @@ _install_xui_service_unit() {
         return 1
     fi
     if ! _xui_service_write_paths_dropin; then
-        echo -e "${yellow}Warning: could not refresh ${xui_service}/x-ui.service.d/10-xui-sandbox.conf.${plain}"
-        echo -e "${yellow}If XUI_DB_FOLDER or XUI_LOG_FOLDER points outside /etc/x-ui and /var/log/x-ui, the panel may not be able to write to it under ProtectSystem=full.${plain}"
+        echo -e "${yellow}警告：无法更新 ${xui_service}/x-ui.service.d/10-xui-sandbox.conf。${plain}"
+        echo -e "${yellow}如果 XUI_DB_FOLDER 或 XUI_LOG_FOLDER 指向 /etc/x-ui 和 /var/log/x-ui 之外的目录，ProtectSystem=full 可能会阻止面板写入。${plain}"
     fi
     _xui_warn_unsupported_hardening
     return 0
@@ -1737,12 +1737,12 @@ verify_release_checksum() {
     code=$(curl -sL --retry 3 --retry-delay 3 --connect-timeout 15 --max-time 60 -o "${sums}" -w '%{http_code}' "${url}.sha256")
     if [[ "${code}" == "404" ]]; then
         rm -f "${sums}"
-        echo -e "${yellow}No checksum published for this release, skipping verification${plain}"
+        echo -e "${yellow}此版本未发布校验和，跳过验证。${plain}"
         return 0
     fi
     if [[ "${code}" != "200" ]]; then
         rm -f "${sums}" "${file}"
-        echo -e "${red}Failed to download the checksum for $(basename "${file}") (HTTP ${code})${plain}"
+        echo -e "${red}下载 $(basename "${file}") 的校验和失败（HTTP ${code}）${plain}"
         exit 1
     fi
     expected=$(awk 'NR == 1 {print $1}' "${sums}")
@@ -1750,10 +1750,10 @@ verify_release_checksum() {
     rm -f "${sums}"
     if [[ ! "${expected}" =~ ^[0-9a-f]{64}$ || "${expected}" != "${actual}" ]]; then
         rm -f "${file}"
-        echo -e "${red}Checksum mismatch for $(basename "${file}"): expected ${expected:-<none>}, got ${actual}${plain}"
+        echo -e "${red}$(basename "${file}") 校验和不匹配：预期 ${expected:-<none>}，实际 ${actual}${plain}"
         exit 1
     fi
-    echo -e "${green}Checksum verified: ${actual}${plain}"
+    echo -e "${green}校验和验证通过：${actual}${plain}"
 }
 
 # Older tags predate some of these files (x-ui.rc arrived in v2.8.4). Serving
@@ -1766,8 +1766,8 @@ require_repo_files() {
     for name in "$@"; do
         status=$(curl -sIL --retry 3 --connect-timeout 15 -o /dev/null -w '%{http_code}' "https://raw.githubusercontent.com/kakbga/3x-ui/${ref}/${name}")
         if [[ "${status}" != "200" ]]; then
-            echo -e "${red}${name} is not available for ${ref} (HTTP ${status})${plain}"
-            echo -e "${red}Install a release that ships it, or 'dev' for the rolling build. Your existing installation has not been touched.${plain}"
+            echo -e "${red}${name} 在 ${ref} 中不可用（HTTP ${status}）${plain}"
+            echo -e "${red}请安装包含该文件的正式发布版，或选择滚动开发版 'dev'。现有安装未受影响。${plain}"
             exit 1
         fi
     done
@@ -1780,18 +1780,18 @@ install_x-ui() {
     if [ $# == 0 ]; then
         tag_version=$(resolve_latest_tag)
         if [[ ! -n "$tag_version" ]]; then
-            echo -e "${red}Failed to fetch x-ui version, it may be due to GitHub API restrictions, please try it later${plain}"
+            echo -e "${red}获取 x-ui 版本失败，可能是 GitHub API 限制所致，请稍后重试。${plain}"
             exit 1
         fi
         echo -e "获取到 x-ui 版本：${tag_version}，正在开始安装…"
         curl -fLR --retry 5 --retry-delay 3 --connect-timeout 15 --speed-limit 1 --speed-time 300 -o ${xui_folder}-linux-$(arch).tar.gz https://github.com/kakbga/3x-ui/releases/download/${tag_version}/x-ui-linux-$(arch).tar.gz
         if [[ $? -ne 0 ]]; then
-            echo -e "${red}Downloading x-ui failed, please be sure that your server can access GitHub ${plain}"
+            echo -e "${red}下载 x-ui 失败，请确认服务器可以访问 GitHub。${plain}"
             exit 1
         fi
         if [[ ! -s ${xui_folder}-linux-$(arch).tar.gz ]]; then
             rm ${xui_folder}-linux-$(arch).tar.gz -f
-            echo -e "${red}Downloaded x-ui release archive is empty${plain}"
+            echo -e "${red}下载的 x-ui 发布压缩包为空${plain}"
             exit 1
         fi
         verify_release_checksum "https://github.com/kakbga/3x-ui/releases/download/${tag_version}/x-ui-linux-$(arch).tar.gz" "${xui_folder}-linux-$(arch).tar.gz"
@@ -1808,21 +1808,21 @@ install_x-ui() {
             min_version="2.3.5"
 
             if [[ "$(printf '%s\n' "$min_version" "$tag_version_numeric" | sort -V | head -n1)" != "$min_version" ]]; then
-                echo -e "${red}Please use a newer version (at least v2.3.5). Exiting installation.${plain}"
+                echo -e "${red}请使用较新版本（至少 v2.3.5），安装程序即将退出。${plain}"
                 exit 1
             fi
         fi
 
         url="https://github.com/kakbga/3x-ui/releases/download/${tag_version}/x-ui-linux-$(arch).tar.gz"
-        echo -e "Beginning to install x-ui ${tag_version}"
+        echo -e "开始安装 x-ui ${tag_version}"
         curl -fLR --retry 5 --retry-delay 3 --connect-timeout 15 --speed-limit 1 --speed-time 300 -o ${xui_folder}-linux-$(arch).tar.gz ${url}
         if [[ $? -ne 0 ]]; then
-            echo -e "${red}Download x-ui ${tag_version} failed, please check if the version exists ${plain}"
+            echo -e "${red}下载 x-ui ${tag_version} 失败，请检查该版本是否存在。${plain}"
             exit 1
         fi
         if [[ ! -s ${xui_folder}-linux-$(arch).tar.gz ]]; then
             rm ${xui_folder}-linux-$(arch).tar.gz -f
-            echo -e "${red}Downloaded x-ui release archive is empty${plain}"
+            echo -e "${red}下载的 x-ui 发布压缩包为空${plain}"
             exit 1
         fi
         verify_release_checksum "${url}" "${xui_folder}-linux-$(arch).tar.gz"
@@ -1843,12 +1843,12 @@ install_x-ui() {
     curl -fLRo "${xui_script_temp}" "https://raw.githubusercontent.com/kakbga/3x-ui/main/x-ui.sh"
     if [[ $? -ne 0 ]]; then
         rm -f "${xui_script_temp}"
-        echo -e "${red}Failed to download x-ui.sh${plain}"
+        echo -e "${red}下载 x-ui.sh 失败${plain}"
         exit 1
     fi
     if [[ ! -s "${xui_script_temp}" ]]; then
         rm -f "${xui_script_temp}"
-        echo -e "${red}Downloaded x-ui.sh is empty${plain}"
+        echo -e "${red}下载的 x-ui.sh 文件为空${plain}"
         exit 1
     fi
 
@@ -1883,7 +1883,7 @@ install_x-ui() {
             rm -rf "${custom_bin_backup}"
             if ! mv "${xui_folder}/bin" "${custom_bin_backup}"; then
                 custom_bin_backup=""
-                echo -e "${yellow}Could not back up bin/ -- custom files there will not be preserved across this update${plain}"
+                echo -e "${yellow}无法备份 bin/；其中的自定义文件不会在此次更新后保留。${plain}"
             fi
         fi
         # Sole cleanup path for the backup from here on -- covers both the
@@ -1899,7 +1899,7 @@ install_x-ui() {
     if [[ $? -ne 0 ]]; then
         rm x-ui-linux-$(arch).tar.gz -f
         rm -f "${xui_script_temp}"
-        echo -e "${red}Failed to extract the x-ui release archive -- the previous installation has already been removed, so the panel will not start until this is fixed; try running the installer again${plain}"
+        echo -e "${red}解压 x-ui 发布包失败。旧版程序已移除，问题修复前面板无法启动；请重新运行安装程序。${plain}"
         exit 1
     fi
     rm x-ui-linux-$(arch).tar.gz -f
@@ -1907,7 +1907,7 @@ install_x-ui() {
     cd x-ui
     if [[ $? -ne 0 || ! -s x-ui ]]; then
         rm -f "${xui_script_temp}"
-        echo -e "${red}Extracted x-ui archive is missing the x-ui binary -- the previous installation has already been removed, so the panel will not start until this is fixed; try running the installer again${plain}"
+        echo -e "${red}解压后的 x-ui 压缩包缺少 x-ui 程序。旧版程序已移除，问题修复前面板无法启动；请重新运行安装程序。${plain}"
         exit 1
     fi
     chmod +x x-ui
@@ -1959,7 +1959,7 @@ install_x-ui() {
         rm -rf "${custom_bin_backup}"
         custom_bin_backup=""
         if [[ ${#restored_custom_bin[@]} -gt 0 ]]; then
-            echo -e "${green}Restored custom file(s) in bin/ not shipped by this release: ${restored_custom_bin[*]}${plain}"
+            echo -e "${green}已还原此版本未提供的 bin/ 自定义文件：${restored_custom_bin[*]}${plain}"
         fi
     fi
     trap - EXIT INT TERM
@@ -1971,7 +1971,7 @@ install_x-ui() {
     mv -f "${xui_script_temp}" /usr/bin/x-ui
     if [[ $? -ne 0 ]]; then
         rm -f "${xui_script_temp}"
-        echo -e "${red}Failed to install x-ui.sh${plain}"
+        echo -e "${red}安装 x-ui.sh 失败${plain}"
         exit 1
     fi
     chmod +x /usr/bin/x-ui
@@ -1984,11 +1984,11 @@ install_x-ui() {
             if ! grep -q "x-ui/x-ui.db" "/etc/.gitignore"; then
                 echo "" >> "/etc/.gitignore"
                 echo "x-ui/x-ui.db" >> "/etc/.gitignore"
-                echo -e "${green}Added x-ui.db to /etc/.gitignore for etckeeper${plain}"
+                echo -e "${green}已将 x-ui.db 添加到 /etc/.gitignore，供 etckeeper 忽略。${plain}"
             fi
         else
             echo "x-ui/x-ui.db" > "/etc/.gitignore"
-            echo -e "${green}Created /etc/.gitignore and added x-ui.db for etckeeper${plain}"
+            echo -e "${green}已创建 /etc/.gitignore 并添加 x-ui.db，供 etckeeper 忽略。${plain}"
         fi
     fi
 
@@ -1998,18 +1998,18 @@ install_x-ui() {
         curl -fLRo "${xui_rc_temp}" "https://raw.githubusercontent.com/kakbga/3x-ui/${script_ref}/x-ui.rc"
         if [[ $? -ne 0 ]]; then
             rm -f "${xui_rc_temp}"
-            echo -e "${red}Failed to download x-ui.rc${plain}"
+            echo -e "${red}下载 x-ui.rc 失败${plain}"
             exit 1
         fi
         if [[ ! -s "${xui_rc_temp}" ]]; then
             rm -f "${xui_rc_temp}"
-            echo -e "${red}Downloaded x-ui.rc is empty${plain}"
+            echo -e "${red}下载的 x-ui.rc 文件为空${plain}"
             exit 1
         fi
         mv -f "${xui_rc_temp}" /etc/init.d/x-ui
         if [[ $? -ne 0 ]]; then
             rm -f "${xui_rc_temp}"
-            echo -e "${red}Failed to install x-ui.rc${plain}"
+            echo -e "${red}安装 x-ui.rc 失败${plain}"
             exit 1
         fi
         chmod +x /etc/init.d/x-ui
@@ -2020,7 +2020,7 @@ install_x-ui() {
         service_installed=false
 
         if [ -f "x-ui.service" ]; then
-            echo -e "${green}Found x-ui.service in extracted files, installing...${plain}"
+            echo -e "${green}已在解压文件中找到 x-ui.service，正在安装…${plain}"
             if _install_xui_service_unit "x-ui.service" "false"; then
                 service_installed=true
             fi
@@ -2030,7 +2030,7 @@ install_x-ui() {
             case "${release}" in
                 ubuntu | debian | armbian)
                     if [ -f "x-ui.service.debian" ]; then
-                        echo -e "${green}Found x-ui.service.debian in extracted files, installing...${plain}"
+                        echo -e "${green}已在解压文件中找到 x-ui.service.debian，正在安装…${plain}"
                         if _install_xui_service_unit "x-ui.service.debian" "false"; then
                             service_installed=true
                         fi
@@ -2038,7 +2038,7 @@ install_x-ui() {
                     ;;
                 arch | manjaro | parch)
                     if [ -f "x-ui.service.arch" ]; then
-                        echo -e "${green}Found x-ui.service.arch in extracted files, installing...${plain}"
+                        echo -e "${green}已在解压文件中找到 x-ui.service.arch，正在安装…${plain}"
                         if _install_xui_service_unit "x-ui.service.arch" "false"; then
                             service_installed=true
                         fi
@@ -2046,7 +2046,7 @@ install_x-ui() {
                     ;;
                 *)
                     if [ -f "x-ui.service.rhel" ]; then
-                        echo -e "${green}Found x-ui.service.rhel in extracted files, installing...${plain}"
+                        echo -e "${green}已在解压文件中找到 x-ui.service.rhel，正在安装…${plain}"
                         if _install_xui_service_unit "x-ui.service.rhel" "false"; then
                             service_installed=true
                         fi
@@ -2057,7 +2057,7 @@ install_x-ui() {
 
         # If service file not found in tar.gz, download from GitHub
         if [ "$service_installed" = false ]; then
-            echo -e "${yellow}Service files not found in tar.gz, downloading from GitHub...${plain}"
+            echo -e "${yellow}压缩包中未找到服务文件，正在从 GitHub 下载…${plain}"
             case "${release}" in
                 ubuntu | debian | armbian)
                     service_unit_url="https://raw.githubusercontent.com/kakbga/3x-ui/${script_ref}/x-ui.service.debian"
@@ -2071,21 +2071,21 @@ install_x-ui() {
             esac
 
             if ! _install_xui_service_unit "$service_unit_url" "true"; then
-                echo -e "${red}Failed to install x-ui.service from GitHub (${script_ref}) -- the release tarball did not ship one either${plain}"
+                echo -e "${red}无法从 GitHub（${script_ref}）安装 x-ui.service，发布压缩包中也没有该文件。${plain}"
                 exit 1
             fi
             service_installed=true
         fi
 
         if [ "$service_installed" = true ]; then
-            echo -e "${green}Setting up systemd unit...${plain}"
+            echo -e "${green}正在配置 systemd 服务…${plain}"
             chown root:root ${xui_service}/x-ui.service > /dev/null 2>&1
             chmod 644 ${xui_service}/x-ui.service > /dev/null 2>&1
             systemctl daemon-reload
             systemctl enable x-ui
             systemctl start x-ui
         else
-            echo -e "${red}Failed to install x-ui.service file${plain}"
+            echo -e "${red}安装 x-ui.service 文件失败${plain}"
             exit 1
         fi
     fi
@@ -2094,28 +2094,28 @@ install_x-ui() {
     # works out of the box (no-op when XUI_ENABLE_FAIL2BAN=false). Never fatal.
     setup_fail2ban
 
-    echo -e "${green}x-ui ${tag_version}${plain} installation finished, it is running now..."
+    echo -e "${green}x-ui ${tag_version}${plain} 安装完成，现已运行…"
     echo -e ""
     echo -e "┌───────────────────────────────────────────────────────┐
-│  ${blue}x-ui control menu usages (subcommands):${plain}              │
+│  ${blue}x-ui 命令行管理命令：${plain}              │
 │                                                       │
-│  ${blue}x-ui${plain}              - Admin Management Script          │
-│  ${blue}x-ui start${plain}        - Start                            │
-│  ${blue}x-ui stop${plain}         - Stop                             │
-│  ${blue}x-ui restart${plain}      - Restart                          │
-│  ${blue}x-ui status${plain}       - Current Status                   │
-│  ${blue}x-ui settings${plain}     - Current Settings                 │
-│  ${blue}x-ui enable${plain}       - Enable Autostart on OS Startup   │
-│  ${blue}x-ui disable${plain}      - Disable Autostart on OS Startup  │
-│  ${blue}x-ui log${plain}          - Check logs                       │
-│  ${blue}x-ui banlog${plain}       - Check Fail2ban ban logs          │
-│  ${blue}x-ui update${plain}       - Update                           │
-│  ${blue}x-ui legacy${plain}       - Legacy version                   │
-│  ${blue}x-ui install${plain}      - Install                          │
-│  ${blue}x-ui uninstall${plain}    - Uninstall                        │
+│  ${blue}x-ui${plain}              - 面板管理脚本          │
+│  ${blue}x-ui start${plain}        - 启动
+│  ${blue}x-ui stop${plain}         - 停止
+│  ${blue}x-ui restart${plain}      - 重启
+│  ${blue}x-ui status${plain}       - 查看状态
+│  ${blue}x-ui settings${plain}     - 查看设置
+│  ${blue}x-ui enable${plain}       - 启用开机自启
+│  ${blue}x-ui disable${plain}      - 禁用开机自启
+│  ${blue}x-ui log${plain}          - 查看日志
+│  ${blue}x-ui banlog${plain}       - 查看 Fail2ban 封禁日志
+│  ${blue}x-ui update${plain}       - 更新面板
+│  ${blue}x-ui legacy${plain}       - 旧版本管理
+│  ${blue}x-ui install${plain}      - 安装面板
+│  ${blue}x-ui uninstall${plain}    - 卸载面板
 └───────────────────────────────────────────────────────┘"
 }
 
-echo -e "${green}Running...${plain}"
+echo -e "${green}运行中…${plain}"
 install_base
 install_x-ui $1
