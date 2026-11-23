@@ -34,7 +34,7 @@ arch() {
         armv6* | armv6) echo 'armv6' ;;
         armv5* | armv5) echo 'armv5' ;;
         s390x) echo 's390x' ;;
-        *) echo -e "${green}不支持的 CPU 架构！ ${plain}" && rm -f "$(realpath "$0")" && exit 1 ;;
+        *) echo -e "${green}不支持的 CPU 架构！${plain}" && rm -f "$(realpath "$0")" && exit 1 ;;
     esac
 }
 
@@ -1139,7 +1139,7 @@ prompt_and_setup_ssl() {
             echo -e "${green}✓ SSL setup skipped.${plain}"
             ;;
         *)
-            echo -e "${red}选项无效，跳过 SSL 配置。${plain}"
+            echo -e "${red}Invalid option. Skipping SSL setup.${plain}"
             SSL_HOST="${server_ip}"
             ;;
     esac
@@ -1223,7 +1223,7 @@ config_after_install() {
                     db_choice="1"
                 fi
             else
-                read -rp "请选择 [1]：" db_choice
+                read -rp "Choose [1]: " db_choice
                 db_choice="${db_choice:-1}"
             fi
             if [[ "$db_choice" == "2" ]]; then
@@ -1250,7 +1250,7 @@ config_after_install() {
                             db_label="PostgreSQL (external)"
                             break
                         fi
-                        echo -e "${yellow}正在以非交互方式安装本地 PostgreSQL……${plain}"
+                        echo -e "${yellow}Installing PostgreSQL locally (non-interactive)...${plain}"
                         local pg_cred_file
                         pg_cred_file=$(mktemp 2> /dev/null) || pg_cred_file=$(mktemp -t x-ui-pg-creds.XXXXXXXX)
                         if [[ -n "${pg_cred_file}" ]] && xui_dsn=$(PG_CRED_FILE="${pg_cred_file}" install_postgres_local); then
@@ -1264,18 +1264,18 @@ config_after_install() {
                             break
                         fi
                         rm -f "${pg_cred_file}"
-                        echo -e "${red}非交互模式下 PostgreSQL 安装失败，正在中止。${plain}"
-                        echo -e "${yellow}如需使用已有数据库，请设置 XUI_DB_DSN；也可设置 XUI_DB_TYPE=sqlite。${plain}"
+                        echo -e "${red}PostgreSQL installation failed in non-interactive mode; aborting.${plain}"
+                        echo -e "${yellow}Set XUI_DB_DSN to use an existing server, or XUI_DB_TYPE=sqlite.${plain}"
                         exit 1
                     fi
                     echo ""
-                    echo -e "  1) 本机安装 PostgreSQL 并创建专用用户和数据库（推荐）"
-                    echo -e "  2) 使用已有 PostgreSQL 服务器（输入 DSN）"
-                    read -rp "请选择 [1]：" pg_mode
+                    echo -e "  1) Install PostgreSQL locally and create a dedicated user/db (recommended)"
+                    echo -e "  2) Use an existing PostgreSQL server (enter DSN)"
+                    read -rp "Choose [1]: " pg_mode
                     pg_mode="${pg_mode:-1}"
                     if [[ "$pg_mode" == "2" ]]; then
                         while [[ -z "$xui_dsn" ]]; do
-                            read -rp "请输入 PostgreSQL DSN（postgres://user:pass@host:port/dbname?sslmode=disable）：" xui_dsn
+                            read -rp "Enter PostgreSQL DSN (postgres://user:pass@host:port/dbname?sslmode=disable): " xui_dsn
                             xui_dsn="${xui_dsn// /}"
                         done
                         db_label="PostgreSQL (external)"
@@ -1300,11 +1300,11 @@ config_after_install() {
                             rm -f "${pg_cred_file}"
                             echo ""
                             echo -e "${red}PostgreSQL installation failed.${plain}"
-                            echo -e "  1) 重试本地安装"
-                            echo -e "  2) 改为输入外部数据库 DSN"
-                            echo -e "  3) 中止安装"
-                            echo -e "  4) 改用 SQLite"
-                            read -rp "请选择 [1]：" pg_fail
+                            echo -e "  1) Retry local install"
+                            echo -e "  2) Enter an external DSN instead"
+                            echo -e "  3) Abort install"
+                            echo -e "  4) Fall back to SQLite"
+                            read -rp "Choose [1]: " pg_fail
                             pg_fail="${pg_fail:-1}"
                             case "$pg_fail" in
                                 2) pg_mode="2" ;;
@@ -1356,9 +1356,9 @@ EOF
             echo -e "${green}═══════════════════════════════════════════${plain}"
             echo -e "${green}     SSL 证书配置（推荐）   ${plain}"
             echo -e "${green}═══════════════════════════════════════════${plain}"
-            echo -e "${yellow}强烈建议启用 SSL。仅当反向代理${plain}"
-            echo -e "${yellow}或 SSH 隧道负责 TLS 加密时才跳过。${plain}"
-            echo -e "${yellow}Let's Encrypt 现在同时支持域名和 IP 地址！${plain}"
+            echo -e "${yellow}SSL is strongly recommended. Skip only if a reverse proxy${plain}"
+            echo -e "${yellow}or SSH tunnel handles TLS for you.${plain}"
+            echo -e "${yellow}Let's Encrypt now supports both domains and IP addresses!${plain}"
             echo ""
 
             prompt_and_setup_ssl "${config_port}" "${config_webBasePath}" "${server_ip}"
@@ -1371,24 +1371,24 @@ EOF
             echo -e "${green}═══════════════════════════════════════════${plain}"
             echo -e "${green}     面板安装完成！         ${plain}"
             echo -e "${green}═══════════════════════════════════════════${plain}"
-            echo -e "${green}用户名：       ${config_username}${plain}"
-            echo -e "${green}密码：         ${config_password}${plain}"
-            echo -e "${green}端口：         ${config_port}${plain}"
-            echo -e "${green}面板路径：     ${config_webBasePath}${plain}"
-            echo -e "${green}数据库：       ${db_label}${plain}"
-            echo -e "${green}访问地址：     ${SSL_SCHEME}://${SSL_HOST}:${config_port}/${config_webBasePath}${plain}"
-            echo -e "${green}API 令牌：     ${config_apiToken}${plain}"
+            echo -e "${green}Username:    ${config_username}${plain}"
+            echo -e "${green}Password:    ${config_password}${plain}"
+            echo -e "${green}Port:        ${config_port}${plain}"
+            echo -e "${green}WebBasePath: ${config_webBasePath}${plain}"
+            echo -e "${green}Database:    ${db_label}${plain}"
+            echo -e "${green}Access URL:  ${SSL_SCHEME}://${SSL_HOST}:${config_port}/${config_webBasePath}${plain}"
+            echo -e "${green}API Token:   ${config_apiToken}${plain}"
             echo -e "${green}═══════════════════════════════════════════${plain}"
             echo -e "${yellow}⚠ 重要：请妥善保存以上登录凭据！${plain}"
             if [[ "$SSL_SCHEME" == "https" ]]; then
-                echo -e "${yellow}⚠ SSL 证书：已启用并配置${plain}"
+                echo -e "${yellow}⚠ SSL Certificate: Enabled and configured${plain}"
             else
                 echo -e "${yellow}⚠ SSL Certificate: Skipped — panel is HTTP-only. Use a reverse proxy or SSH tunnel.${plain}"
             fi
 
             if [[ "$db_choice" == "2" ]]; then
                 echo ""
-                echo -e "${green}面板内置 PostgreSQL 备份与恢复功能：${plain}"
+                echo -e "${green}PostgreSQL backup & restore is built into the panel:${plain}"
                 echo -e "  ${blue}${SSL_SCHEME}://${SSL_HOST}:${config_port}/${config_webBasePath}${plain} → Backup & Restore"
                 echo -e "${yellow}  Back Up downloads a pg_dump .dump file; Restore reloads it via pg_restore.${plain}"
             fi
@@ -1426,7 +1426,7 @@ EOF
             local config_webBasePath=$(gen_random_string 18)
             echo -e "${yellow}WebBasePath is missing or set to root. Generating a new one...${plain}"
             ${xui_folder}/x-ui setting -webBasePath "${config_webBasePath}"
-            echo -e "${green}New 面板路径：     ${config_webBasePath}${plain}"
+            echo -e "${green}New WebBasePath: ${config_webBasePath}${plain}"
 
             # If the panel is already installed but no certificate is configured, prompt for SSL now
             if [[ -z "${existing_cert}" ]]; then
@@ -1434,10 +1434,10 @@ EOF
                 echo -e "${green}═══════════════════════════════════════════${plain}"
                 echo -e "${green}     SSL 证书配置（推荐）   ${plain}"
                 echo -e "${green}═══════════════════════════════════════════${plain}"
-                echo -e "${yellow}Let's Encrypt 现在同时支持域名和 IP 地址！${plain}"
+                echo -e "${yellow}Let's Encrypt now supports both domains and IP addresses!${plain}"
                 echo ""
                 prompt_and_setup_ssl "${existing_port}" "${config_webBasePath}" "${server_ip}"
-                echo -e "${green}访问地址：     ${SSL_SCHEME}://${SSL_HOST}:${existing_port}/${config_webBasePath}${plain}"
+                echo -e "${green}Access URL:  ${SSL_SCHEME}://${SSL_HOST}:${existing_port}/${config_webBasePath}${plain}"
             else
                 # If a cert already exists, just show the access URL
                 echo -e "${green}Access URL: https://${server_ip}:${existing_port}/${config_webBasePath}${plain}"
@@ -1475,10 +1475,10 @@ EOF
             echo -e "${green}═══════════════════════════════════════════${plain}"
             echo -e "${green}     SSL 证书配置（推荐）   ${plain}"
             echo -e "${green}═══════════════════════════════════════════${plain}"
-            echo -e "${yellow}Let's Encrypt 现在同时支持域名和 IP 地址！${plain}"
+            echo -e "${yellow}Let's Encrypt now supports both domains and IP addresses!${plain}"
             echo ""
             prompt_and_setup_ssl "${existing_port}" "${existing_webBasePath}" "${server_ip}"
-            echo -e "${green}访问地址：     ${SSL_SCHEME}://${SSL_HOST}:${existing_port}/${existing_webBasePath}${plain}"
+            echo -e "${green}Access URL:  ${SSL_SCHEME}://${SSL_HOST}:${existing_port}/${existing_webBasePath}${plain}"
         else
             echo -e "${green}SSL certificate already configured. No action needed.${plain}"
         fi
@@ -1773,7 +1773,7 @@ require_repo_files() {
     shift
     [[ "${ref}" == "main" ]] && return 0
     for name in "$@"; do
-        status=$(curl -sIL --retry 3 --connect-timeout 15 -o /dev/null -w '%{http_code}' "https://raw.githubusercontent.com/kakbga/3x-ui/${ref}/${name}")
+        status=$(curl -sIL --retry 3 --connect-timeout 15 -o /dev/null -w '%{http_code}' "https://raw.githubusercontent.com/MHSanaei/3x-ui/${ref}/${name}")
         if [[ "${status}" != "200" ]]; then
             echo -e "${red}${name} is not available for ${ref} (HTTP ${status})${plain}"
             echo -e "${red}Install a release that ships it, or 'dev' for the rolling build. Your existing installation has not been touched.${plain}"
@@ -1849,7 +1849,7 @@ install_x-ui() {
     require_repo_files "${script_ref}" "${required_files[@]}"
     local xui_script_temp="/usr/bin/x-ui-temp.$$"
     rm -f "${xui_script_temp}"
-    curl -fLRo "${xui_script_temp}" "https://raw.githubusercontent.com/kakbga/3x-ui/${script_ref}/x-ui.sh"
+    curl -fLRo "${xui_script_temp}" "https://raw.githubusercontent.com/kakbga/3x-ui/main/x-ui.sh"
     if [[ $? -ne 0 ]]; then
         rm -f "${xui_script_temp}"
         echo -e "${red}Failed to download x-ui.sh${plain}"
@@ -2004,7 +2004,7 @@ install_x-ui() {
     if [[ $release == "alpine" ]]; then
         xui_rc_temp="/etc/init.d/x-ui.tmp.$$"
         rm -f "${xui_rc_temp}"
-        curl -fLRo "${xui_rc_temp}" "https://raw.githubusercontent.com/kakbga/3x-ui/${script_ref}/x-ui.rc"
+        curl -fLRo "${xui_rc_temp}" "https://raw.githubusercontent.com/MHSanaei/3x-ui/${script_ref}/x-ui.rc"
         if [[ $? -ne 0 ]]; then
             rm -f "${xui_rc_temp}"
             echo -e "${red}Failed to download x-ui.rc${plain}"
@@ -2069,13 +2069,13 @@ install_x-ui() {
             echo -e "${yellow}Service files not found in tar.gz, downloading from GitHub...${plain}"
             case "${release}" in
                 ubuntu | debian | armbian)
-                    service_unit_url="https://raw.githubusercontent.com/kakbga/3x-ui/${script_ref}/x-ui.service.debian"
+                    service_unit_url="https://raw.githubusercontent.com/MHSanaei/3x-ui/${script_ref}/x-ui.service.debian"
                     ;;
                 arch | manjaro | parch)
-                    service_unit_url="https://raw.githubusercontent.com/kakbga/3x-ui/${script_ref}/x-ui.service.arch"
+                    service_unit_url="https://raw.githubusercontent.com/MHSanaei/3x-ui/${script_ref}/x-ui.service.arch"
                     ;;
                 *)
-                    service_unit_url="https://raw.githubusercontent.com/kakbga/3x-ui/${script_ref}/x-ui.service.rhel"
+                    service_unit_url="https://raw.githubusercontent.com/MHSanaei/3x-ui/${script_ref}/x-ui.service.rhel"
                     ;;
             esac
 
@@ -2103,7 +2103,7 @@ install_x-ui() {
     # works out of the box (no-op when XUI_ENABLE_FAIL2BAN=false). Never fatal.
     setup_fail2ban
 
-    echo -e "${green}x-ui ${tag_version}${plain} 安装完成，正在运行……"
+    echo -e "${green}x-ui ${tag_version}${plain} installation finished, it is running now..."
     echo -e ""
     echo -e "┌───────────────────────────────────────────────────────┐
 │  ${blue}x-ui control menu usages (subcommands):${plain}              │
@@ -2118,13 +2118,13 @@ install_x-ui() {
 │  ${blue}x-ui disable${plain}      - Disable Autostart on OS Startup  │
 │  ${blue}x-ui log${plain}          - Check logs                       │
 │  ${blue}x-ui banlog${plain}       - Check Fail2ban ban logs          │
-│  ${blue}x-ui update${plain}       - 更新面板                        │
+│  ${blue}x-ui update${plain}       - Update                           │
 │  ${blue}x-ui legacy${plain}       - Legacy version                   │
 │  ${blue}x-ui install${plain}      - Install                          │
-│  ${blue}x-ui uninstall${plain}    - 卸载面板                        │
+│  ${blue}x-ui uninstall${plain}    - Uninstall                        │
 └───────────────────────────────────────────────────────┘"
 }
 
-echo -e "${green}运行中……${plain}"
+echo -e "${green}Running...${plain}"
 install_base
 install_x-ui $1
