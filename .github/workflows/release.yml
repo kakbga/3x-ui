@@ -382,12 +382,12 @@ jobs:
             return 1
           }
           short="${COMMIT::8}"
-          notes="Rolling development build — installs via the panel's Dev update channel.
+          notes="滚动开发版，通过面板的开发版更新通道安装。
 
-          commit=${COMMIT}
-          built=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          提交=${COMMIT}
+          构建时间=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-          Automated per-commit build from main. Not a stable release."
+          由 main 分支自动构建，非稳定版。"
 
           # Force-move the dev-latest tag to this commit so the release tracks it.
           git tag -f dev-latest "${COMMIT}"
@@ -396,9 +396,9 @@ jobs:
           # The release exists on every run but the first; edit-first avoids an
           # existence probe that can 503 and mis-route into create (422).
           if ! retry gh release edit dev-latest --prerelease --latest=false \
-              --title "Dev build ${short}" --notes "${notes}"; then
+              --title "开发版构建 ${short}" --notes "${notes}"; then
             retry gh release create dev-latest --prerelease --latest=false \
-              --target "${COMMIT}" --title "Dev build ${short}" --notes "${notes}"
+              --target "${COMMIT}" --title "开发版构建 ${short}" --notes "${notes}"
           fi
 
           retry gh release upload dev-latest dev-artifacts/*.tar.gz dev-artifacts/*.zip dev-artifacts/*.sha256 --clobber
