@@ -50,7 +50,7 @@ describe('formatPanelVersion', () => {
     expect(formatPanelVersion('V3.4.0')).toBe('v3.4.0');
   });
 
-  it('shows dev builds verbatim without a v prefix', () => {
+  it('labels dev builds in Chinese with a short commit', () => {
     expect(formatPanelVersion('dev+1a2b3c4d')).toBe('开发版 1a2b3c4d');
     expect(formatPanelVersion('dev')).toBe('dev');
   });
