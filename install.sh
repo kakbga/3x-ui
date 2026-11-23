@@ -120,7 +120,7 @@ select_panel_port() {
             case "${confirm,,}" in
                 y | yes) break ;;
                 n | no | '') confirm=n; break ;;
-                *) echo '请输入 yes 或 no（直接回车默认为 no）。' >&2 ;;
+                *) echo 'Please answer yes or no (Enter defaults to No).' >&2 ;;
             esac
         done
     fi
@@ -149,9 +149,9 @@ select_panel_port() {
             return 1
         fi
         if ! port=$(normalize_panel_port "$port"); then
-            echo '端口无效，请输入 1 到 65535 之间的数字。' >&2
+            echo 'Invalid port. Enter a number between 1 and 65535.' >&2
         elif is_port_in_use "$port"; then
-            echo "端口 $port 已被占用，请更换面板端口。" >&2
+            echo "Port $port is already in use. Choose another panel port." >&2
         else
             echo "面板端口：$port" >&2
             printf '%s\n' "$port"
@@ -1348,7 +1348,7 @@ EOF
                 ! grep -Fxq "Port set successfully: ${config_port}" <<< "$settings_output" ||
                 ! grep -Fxq 'Username and password updated successfully' <<< "$settings_output" ||
                 ! grep -Fxq 'Base URI path set successfully' <<< "$settings_output"; then
-                echo '面板设置配置失败，安装已中止。' >&2
+                echo 'Failed to configure panel settings; installation aborted.' >&2
                 exit 1
             fi
 
