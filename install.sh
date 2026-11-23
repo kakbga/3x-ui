@@ -1724,6 +1724,7 @@ _install_xui_service_unit() {
 
 # resolve_latest_tag selects the latest stable release from this fork.
 resolve_latest_tag() {
+    # Select the latest stable release from this fork; dev-latest is opt-in.
     local latest_url
     latest_url=$(curl -fLsS --retry 3 --retry-delay 2 --connect-timeout 15 -o /dev/null -w '%{url_effective}' \
         "https://github.com/kakbga/3x-ui/releases/latest") || return 1
