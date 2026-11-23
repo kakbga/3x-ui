@@ -22,6 +22,8 @@ function parseVersionParts(version: string): [number, number, number] | null {
 export function formatPanelVersion(version: string | undefined | null): string {
   const v = (version || '').trim();
   if (!v) return '';
+  const devBuild = /^dev\+([0-9a-f]{7,40})$/i.exec(v);
+  if (devBuild) return `开发版 ${devBuild[1].slice(0, 8)}`;
   const normalized = v.replace(/^v/i, '');
   return /^\d/.test(normalized) ? `v${normalized}` : v;
 }
