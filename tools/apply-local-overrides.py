@@ -116,11 +116,12 @@ def use_fork_dev_release() -> None:
 
     sidebar = ROOT / "frontend/src/layouts/AppSidebar.tsx"
     text = sidebar.read_text(encoding="utf-8")
-    text = text.replace(
-        "const REPO_URL = 'https://github.com/MHSanaei/3x-ui';",
-        "const REPO_URL = 'https://github.com/kakbga/3x-ui/releases/tag/dev-latest';",
+    text = re.sub(
+        r"const REPO_URL = 'https://github\.com/(?:MHSanaei/3x-ui|kakbga/3x-ui(?:/releases/tag/dev-latest)?)';",
+        "const REPO_URL = 'https://github.com/kakbga/3x-ui';",
+        text,
     )
-    if "const REPO_URL = 'https://github.com/MHSanaei/3x-ui';" in text:
+    if "const REPO_URL = 'https://github.com/kakbga/3x-ui';" not in text:
         raise RuntimeError("AppSidebar version link still points at the upstream repository")
     sidebar.write_text(text, encoding="utf-8", newline="\n")
 
