@@ -51,7 +51,7 @@ describe('formatPanelVersion', () => {
   });
 
   it('shows dev builds verbatim without a v prefix', () => {
-    expect(formatPanelVersion('dev+1a2b3c4d')).toBe('dev+1a2b3c4d');
+    expect(formatPanelVersion('dev+1a2b3c4d')).toBe('开发版 1a2b3c4d');
     expect(formatPanelVersion('dev')).toBe('dev');
   });
 
