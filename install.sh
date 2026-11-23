@@ -1807,10 +1807,10 @@ install_x-ui() {
             echo -e "${yellow}正在安装本仓库滚动开发版（dev-latest）；该版本随官网更新，不是稳定版。${plain}"
         else
             tag_version_numeric=${tag_version#v}
-            min_version="2.3.5"
+            min_version="1.0.0"
 
             if [[ "$(printf '%s\n' "$min_version" "$tag_version_numeric" | sort -V | head -n1)" != "$min_version" ]]; then
-                echo -e "${red}请使用较新版本（至少 v2.3.5），安装程序即将退出。${plain}"
+                echo -e "${red}请使用较新版本（至少 v1.0.0），安装程序即将退出。${plain}"
                 exit 1
             fi
         fi
