@@ -321,7 +321,7 @@ uninstall() {
 
     echo ""
     echo -e "卸载成功。\n"
-    echo "If you need to install this panel again, you can use below command:"
+    echo "如需重新安装面板，请使用以下中文安装命令："
     echo -e "${green}bash <(curl -Ls https://raw.githubusercontent.com/kakbga/3x-ui/main/install.sh)${plain}"
     echo ""
     # Trap the SIGTERM signal
