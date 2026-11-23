@@ -187,7 +187,7 @@ config_after_update() {
                 if (failed || credentials != 1 || ports != 1 || paths != 1 || (path != "" && path !~ /^\//)) exit 1
                 print path
             }'); then
-        echo -e "${red}无法读取面板访问路径，将保留现有设置。${plain}" >&2
+        echo -e "${red}Unable to read webBasePath; leaving existing settings unchanged.${plain}" >&2
         return 1
     fi
     existing_webBasePath=${existing_webBasePath#/}
