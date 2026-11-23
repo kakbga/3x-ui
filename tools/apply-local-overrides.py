@@ -136,6 +136,23 @@ def use_fork_dev_release() -> None:
     )
     if "workflow_dispatch') && github.ref == 'refs/heads/main'" not in text:
         raise RuntimeError("release.yml cannot publish dev-latest after an automated sync")
+    text = text.replace(
+        '''          notes="Rolling development build — installs via the panel's Dev update channel.
+
+          commit=${COMMIT}
+          built=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+          Automated per-commit build from main. Not a stable release."''',
+        '''          notes="滚动开发版，通过面板的开发版更新通道安装。
+
+          提交=${COMMIT}
+          构建时间=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+          由 main 分支自动构建，非稳定版。"''',
+    )
+    text = text.replace('"Dev build ${short}"', '"开发版构建 ${short}"')
+    if "Rolling development build — installs via the panel's Dev update channel." in text:
+        raise RuntimeError("release.yml still contains the upstream English dev-release notes")
     release.write_text(text, encoding="utf-8", newline="\n")
 
 
