@@ -1,0 +1,39 @@
+name: Sync upstream shell scripts
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * *"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out fork
+        uses: actions/checkout@v4
+      - name: Download official scripts
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/upstream-shell"
+          for script in install.sh update.sh x-ui.sh; do
+            curl --fail --silent --show-error --location \
+              "https://raw.githubusercontent.com/MHSanaei/3x-ui/main/$script" \
+              --output "$RUNNER_TEMP/upstream-shell/$script"
+          done
+      - name: Localize user-facing prompts
+        run: python3 tools/localize-shell-scripts.py "$RUNNER_TEMP/upstream-shell" .
+      - name: Create sync pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: automation/sync-upstream-shell-scripts
+          delete-branch: true
+          commit-message: "同步官方脚本并生成中文交互提示"
+          title: "同步官方安装与管理脚本"
+          body: |
+            从 MHSanaei/3x-ui/main 同步 install.sh、update.sh 和 x-ui.sh，并通过本地化映射替换用户可见提示。
+
+            请检查脚本差异，确认仅有上游变更和文案本地化后再合并。
