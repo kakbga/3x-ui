@@ -111,6 +111,16 @@ def use_fork_dev_release() -> None:
     text = text.replace("https://raw.githubusercontent.com/MHSanaei/3x-ui/", "https://raw.githubusercontent.com/kakbga/3x-ui/")
     menu.write_text(text, encoding="utf-8", newline="\n")
 
+    sidebar = ROOT / "frontend/src/layouts/AppSidebar.tsx"
+    text = sidebar.read_text(encoding="utf-8")
+    text = text.replace(
+        "const REPO_URL = 'https://github.com/MHSanaei/3x-ui';",
+        "const REPO_URL = 'https://github.com/kakbga/3x-ui/releases/tag/dev-latest';",
+    )
+    if "const REPO_URL = 'https://github.com/MHSanaei/3x-ui';" in text:
+        raise RuntimeError("AppSidebar version link still points at the upstream repository")
+    sidebar.write_text(text, encoding="utf-8", newline="\n")
+
     panel = ROOT / "internal/web/service/panel/panel.go"
     text = panel.read_text(encoding="utf-8")
     text = text.replace(
