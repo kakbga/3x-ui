@@ -111,6 +111,20 @@ def use_fork_dev_release() -> None:
     text = text.replace("https://raw.githubusercontent.com/MHSanaei/3x-ui/", "https://raw.githubusercontent.com/kakbga/3x-ui/")
     menu.write_text(text, encoding="utf-8", newline="\n")
 
+    panel = ROOT / "internal/web/service/panel/panel.go"
+    text = panel.read_text(encoding="utf-8")
+    text = text.replace(
+        "https://raw.githubusercontent.com/MHSanaei/3x-ui/",
+        "https://raw.githubusercontent.com/kakbga/3x-ui/",
+    )
+    text = text.replace(
+        "https://api.github.com/repos/MHSanaei/3x-ui/",
+        "https://api.github.com/repos/kakbga/3x-ui/",
+    )
+    if "https://raw.githubusercontent.com/MHSanaei/3x-ui/" in text or "https://api.github.com/repos/MHSanaei/3x-ui/" in text:
+        raise RuntimeError("Panel updater still points at the upstream repository")
+    panel.write_text(text, encoding="utf-8", newline="\n")
+
     release = ROOT / ".github/workflows/release.yml"
     text = release.read_text(encoding="utf-8")
     if "  publish-dev:" not in text:
