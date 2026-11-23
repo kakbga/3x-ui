@@ -377,6 +377,7 @@ TRANSLATIONS = {
         "Failed to check the system OS, please contact the author!": "无法识别操作系统，请联系项目维护者！",
         "Update successful. The panel has automatically restarted.": "更新成功，面板已自动重启。",
         "Failed to update the menu.": "更新菜单失败。",
+        "If you need to install this panel again, you can use below command:": "如需重新安装面板，请使用以下中文安装命令：",
         "Enter the panel version (like 2.4.0):": "请输入面板版本号（例如 2.4.0）：",
         "Enter port number[1-65535]: ": "请输入端口号 [1-65535]：",
         "The port is set, Please restart the panel now, and use the new port ${green}${port}${plain} to access web panel": "端口已设置，请重启面板，然后使用新端口 ${green}${port}${plain} 访问面板。",
