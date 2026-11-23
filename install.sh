@@ -487,7 +487,7 @@ install_acme() {
     cd ~ || return 1
     curl -s https://get.acme.sh | sh > /dev/null 2>&1
     if [ $? -ne 0 ]; then
-        echo -e "${red}Failed to install acme.sh${plain}"
+        echo -e "${red}安装 acme.sh 失败${plain}"
         return 1
     else
         echo -e "${green}acme.sh installed successfully${plain}"
@@ -507,7 +507,7 @@ setup_ssl_certificate() {
     if ! command -v ~/.acme.sh/acme.sh &> /dev/null; then
         install_acme
         if [ $? -ne 0 ]; then
-            echo -e "${yellow}Failed to install acme.sh, skipping SSL setup${plain}"
+            echo -e "${yellow}安装 acme.sh 失败, skipping SSL setup${plain}"
             return 1
         fi
     fi
@@ -568,27 +568,27 @@ setup_ip_certificate() {
     local ipv4="$1"
     local ipv6="$2" # optional
 
-    echo -e "${green}Setting up Let's Encrypt IP certificate (shortlived profile)...${plain}"
-    echo -e "${yellow}Note: IP certificates are valid for ~6 days and will auto-renew.${plain}"
-    echo -e "${yellow}Default listener is port 80. If you choose another port, ensure external port 80 forwards to it.${plain}"
+    echo -e "${green}正在配置 Let's Encrypt 短期 IP 证书…${plain}"
+    echo -e "${yellow}提示：IP 证书有效期约 6 天，并会自动续期。${plain}"
+    echo -e "${yellow}默认监听端口为 80。若选择其他端口，请将外部 80 端口转发到该端口。${plain}"
 
     # Check for acme.sh
     if ! command -v ~/.acme.sh/acme.sh &> /dev/null; then
         install_acme
         if [ $? -ne 0 ]; then
-            echo -e "${red}Failed to install acme.sh${plain}"
+            echo -e "${red}安装 acme.sh 失败${plain}"
             return 1
         fi
     fi
 
     # Validate IP address
     if [[ -z "$ipv4" ]]; then
-        echo -e "${red}IPv4 address is required${plain}"
+        echo -e "${red}必须提供 IPv4 地址${plain}"
         return 1
     fi
 
     if ! is_ipv4 "$ipv4"; then
-        echo -e "${red}Invalid IPv4 address: $ipv4${plain}"
+        echo -e "${red}IPv4 地址无效：$ipv4${plain}"
         return 1
     fi
 
@@ -600,7 +600,7 @@ setup_ip_certificate() {
     local domain_args="-d ${ipv4}"
     if [[ -n "$ipv6" ]] && is_ipv6 "$ipv6"; then
         domain_args="${domain_args} -d ${ipv6}"
-        echo -e "${green}Including IPv6 address: ${ipv6}${plain}"
+        echo -e "${green}同时使用 IPv6 地址：${ipv6}${plain}"
     fi
 
     # Set reload command for auto-renewal (add || true so it doesn't fail during first install)
@@ -608,47 +608,47 @@ setup_ip_certificate() {
 
     # Choose port for HTTP-01 listener (default 80, prompt override)
     local WebPort=""
-    prompt_or_default WebPort "Port to use for ACME HTTP-01 listener (default 80): " "80" XUI_ACME_HTTP_PORT
+    prompt_or_default WebPort "ACME HTTP-01 验证监听端口（默认 80）：" "80" XUI_ACME_HTTP_PORT
     WebPort="${WebPort:-80}"
     if ! [[ "${WebPort}" =~ ^[0-9]+$ ]] || ((WebPort < 1 || WebPort > 65535)); then
-        echo -e "${red}Invalid port provided. Falling back to 80.${plain}"
+        echo -e "${red}端口无效，将使用默认端口 80。${plain}"
         WebPort=80
     fi
-    echo -e "${green}Using port ${WebPort} for standalone validation.${plain}"
+    echo -e "${green}独立验证将使用端口 ${WebPort}。${plain}"
     if [[ "${WebPort}" -ne 80 ]]; then
-        echo -e "${yellow}Reminder: Let's Encrypt still connects on port 80; forward external port 80 to ${WebPort}.${plain}"
+        echo -e "${yellow}提醒：Let's Encrypt 仍通过外部 80 端口连接，请将其转发到 ${WebPort}。${plain}"
     fi
 
     # Ensure chosen port is available
     while true; do
         if is_port_in_use "${WebPort}"; then
-            echo -e "${yellow}Port ${WebPort} is in use.${plain}"
+            echo -e "${yellow}端口 ${WebPort} 已被占用。${plain}"
 
             local alt_port=""
             if [[ "$NONINTERACTIVE" == "1" ]]; then
-                echo -e "${red}Port ${WebPort} is busy; cannot proceed in non-interactive mode.${plain}"
+                echo -e "${red}端口 ${WebPort} 正忙，无法在非交互模式下继续。${plain}"
                 return 1
             fi
             read -rp "请输入 acme.sh 独立验证所用端口（留空则取消）：" alt_port
             alt_port="${alt_port// /}"
             if [[ -z "${alt_port}" ]]; then
-                echo -e "${red}Port ${WebPort} is busy; cannot proceed.${plain}"
+                echo -e "${red}端口 ${WebPort} 正忙，无法继续。${plain}"
                 return 1
             fi
             if ! [[ "${alt_port}" =~ ^[0-9]+$ ]] || ((alt_port < 1 || alt_port > 65535)); then
-                echo -e "${red}Invalid port provided.${plain}"
+                echo -e "${red}提供的端口无效。${plain}"
                 return 1
             fi
             WebPort="${alt_port}"
             continue
         else
-            echo -e "${green}Port ${WebPort} is free and ready for standalone validation.${plain}"
+            echo -e "${green}端口 ${WebPort} 空闲，可用于独立验证。${plain}"
             break
         fi
     done
 
     # Issue certificate with shortlived profile
-    echo -e "${green}Issuing IP certificate for ${ipv4}...${plain}"
+    echo -e "${green}正在为 ${ipv4} 申请 IP 证书…${plain}"
     ~/.acme.sh/acme.sh --set-default-ca --server letsencrypt --force > /dev/null 2>&1
     [[ -n "${XUI_ACME_EMAIL:-}" ]] && ~/.acme.sh/acme.sh --register-account -m "${XUI_ACME_EMAIL}" > /dev/null 2>&1
 
@@ -662,8 +662,8 @@ setup_ip_certificate() {
         --force
 
     if [ $? -ne 0 ]; then
-        echo -e "${red}Failed to issue IP certificate${plain}"
-        echo -e "${yellow}Please ensure port ${WebPort} is reachable (or forwarded from external port 80)${plain}"
+        echo -e "${red}IP 证书申请失败${plain}"
+        echo -e "${yellow}请确认端口 ${WebPort} 可从外部访问（或已从外部 80 端口转发）${plain}"
         # Cleanup acme.sh data for both IPv4 and IPv6 if specified
         rm -rf ~/.acme.sh/${ipv4} ~/.acme.sh/${ipv4}_ecc 2> /dev/null
         [[ -n "$ipv6" ]] && rm -rf ~/.acme.sh/${ipv6} ~/.acme.sh/${ipv6}_ecc 2> /dev/null
@@ -671,7 +671,7 @@ setup_ip_certificate() {
         return 1
     fi
 
-    echo -e "${green}Certificate issued successfully, installing...${plain}"
+    echo -e "${green}证书申请成功，正在安装…${plain}"
 
     # Install certificate
     # Note: acme.sh may report "Reload error" and exit non-zero if reloadcmd fails,
@@ -683,7 +683,7 @@ setup_ip_certificate() {
 
     # Verify certificate files exist (don't rely on exit code - reloadcmd failure causes non-zero)
     if [[ ! -f "${certDir}/fullchain.pem" || ! -f "${certDir}/privkey.pem" ]]; then
-        echo -e "${red}Certificate files not found after installation${plain}"
+        echo -e "${red}安装后未找到证书文件${plain}"
         # Cleanup acme.sh data for both IPv4 and IPv6 if specified
         rm -rf ~/.acme.sh/${ipv4} ~/.acme.sh/${ipv4}_ecc 2> /dev/null
         [[ -n "$ipv6" ]] && rm -rf ~/.acme.sh/${ipv6} ~/.acme.sh/${ipv6}_ecc 2> /dev/null
@@ -691,7 +691,7 @@ setup_ip_certificate() {
         return 1
     fi
 
-    echo -e "${green}Certificate files installed successfully${plain}"
+    echo -e "${green}证书文件安装成功${plain}"
 
     # Enable auto-upgrade for acme.sh (ensures cron job runs)
     ~/.acme.sh/acme.sh --upgrade --auto-upgrade > /dev/null 2>&1
@@ -701,21 +701,21 @@ setup_ip_certificate() {
     chmod 644 ${certDir}/fullchain.pem 2> /dev/null
 
     # Configure panel to use the certificate
-    echo -e "${green}Setting certificate paths for the panel...${plain}"
+    echo -e "${green}正在为面板设置证书路径…${plain}"
     ${xui_folder}/x-ui cert -webCert "${certDir}/fullchain.pem" -webCertKey "${certDir}/privkey.pem"
 
     if [ $? -ne 0 ]; then
-        echo -e "${yellow}Warning: Could not set certificate paths automatically${plain}"
-        echo -e "${yellow}Certificate files are at:${plain}"
-        echo -e "  Cert: ${certDir}/fullchain.pem"
-        echo -e "  Key:  ${certDir}/privkey.pem"
+        echo -e "${yellow}警告：无法自动设置证书路径${plain}"
+        echo -e "${yellow}证书文件位置：${plain}"
+        echo -e "  证书：${certDir}/fullchain.pem"
+        echo -e "  私钥：${certDir}/privkey.pem"
     else
-        echo -e "${green}Certificate paths configured successfully${plain}"
+        echo -e "${green}证书路径配置成功${plain}"
     fi
 
-    echo -e "${green}IP certificate installed and configured successfully!${plain}"
-    echo -e "${green}Certificate valid for ~6 days, auto-renews via acme.sh cron job.${plain}"
-    echo -e "${yellow}acme.sh will automatically renew and reload x-ui before expiry.${plain}"
+    echo -e "${green}IP 证书已成功安装并配置！${plain}"
+    echo -e "${green}证书有效期约 6 天，由 acme.sh 定时任务自动续期。${plain}"
+    echo -e "${yellow}acme.sh 会在证书到期前自动续期并重启 x-ui。${plain}"
     return 0
 }
 
@@ -730,7 +730,7 @@ ssl_cert_issue() {
         cd ~ || return 1
         curl -s https://get.acme.sh | sh
         if [ $? -ne 0 ]; then
-            echo -e "${red}Failed to install acme.sh${plain}"
+            echo -e "${red}安装 acme.sh 失败${plain}"
             return 1
         else
             echo -e "${green}acme.sh installed successfully${plain}"
@@ -782,15 +782,15 @@ ssl_cert_issue() {
         if [[ -n "${acmeCertDir}" ]]; then
             cert_exists=1
             local certInfo=$(~/.acme.sh/acme.sh --list 2> /dev/null | grep -F "${domain}")
-            echo -e "${yellow}Existing certificate found for ${domain}, will reuse it.${plain}"
+            echo -e "${yellow}已找到 ${domain} 的现有证书，将继续使用。${plain}"
             [[ -n "${certInfo}" ]] && echo "$certInfo"
         else
-            echo -e "${yellow}Found incomplete acme.sh state for ${domain} (no valid certificate files); cleaning it up and re-issuing.${plain}"
+            echo -e "${yellow}发现 ${domain} 的 acme.sh 证书记录不完整（缺少有效证书文件），正在清理并重新申请。${plain}"
             rm -rf ~/.acme.sh/${domain} ~/.acme.sh/${domain}_ecc
         fi
     fi
     if [[ ${cert_exists} -eq 0 ]]; then
-        echo -e "${green}Your domain is ready for issuing certificates now...${plain}"
+        echo -e "${green}域名已就绪，可以开始申请证书…${plain}"
     fi
 
     # create a directory for the certificate
@@ -804,17 +804,17 @@ ssl_cert_issue() {
 
     # get the port number for the standalone server
     local WebPort=80
-    prompt_or_default WebPort "Please choose which port to use (default is 80): " "80" XUI_ACME_HTTP_PORT
+    prompt_or_default WebPort "请选择验证端口（默认 80）：" "80" XUI_ACME_HTTP_PORT
     if [[ -z ${WebPort} ]]; then
         WebPort=80
     elif [[ ! ${WebPort} =~ ^[1-9][0-9]*$ || ${WebPort} -gt 65535 ]]; then
-        echo -e "${yellow}Your input ${WebPort} is invalid, will use default port 80.${plain}"
+        echo -e "${yellow}端口 ${WebPort} 无效，将使用默认端口 80。${plain}"
         WebPort=80
     fi
-    echo -e "${green}Will use port: ${WebPort} to issue certificates. Please make sure this port is open.${plain}"
+    echo -e "${green}将使用端口 ${WebPort} 申请证书，请确认该端口已开放。${plain}"
 
     # Stop panel temporarily
-    echo -e "${yellow}Stopping panel temporarily...${plain}"
+    echo -e "${yellow}正在暂时停止面板…${plain}"
     systemctl stop x-ui 2> /dev/null || rc-service x-ui stop 2> /dev/null
 
     if [[ ${cert_exists} -eq 0 ]]; then
@@ -823,21 +823,21 @@ ssl_cert_issue() {
         [[ -n "${XUI_ACME_EMAIL:-}" ]] && ~/.acme.sh/acme.sh --register-account -m "${XUI_ACME_EMAIL}" > /dev/null 2>&1
         ~/.acme.sh/acme.sh --issue -d ${domain} $(acme_listen_flag) --standalone --httpport ${WebPort} --force
         if [ $? -ne 0 ]; then
-            echo -e "${red}Issuing certificate failed, please check logs.${plain}"
+            echo -e "${red}证书申请失败，请检查日志。${plain}"
             rm -rf ~/.acme.sh/${domain} ~/.acme.sh/${domain}_ecc
             systemctl start x-ui 2> /dev/null || rc-service x-ui start 2> /dev/null
             return 1
         else
-            echo -e "${green}Issuing certificate succeeded, installing certificates...${plain}"
+            echo -e "${green}证书申请成功，正在安装…${plain}"
         fi
     else
-        echo -e "${green}Using existing certificate, installing certificates...${plain}"
+        echo -e "${green}正在使用现有证书并安装…${plain}"
     fi
 
     # Setup reload command
     reloadCmd="systemctl restart x-ui || rc-service x-ui restart"
-    echo -e "${green}Default --reloadcmd for ACME is: ${yellow}systemctl restart x-ui || rc-service x-ui restart${plain}"
-    echo -e "${green}This command will run on every certificate issue and renew.${plain}"
+    echo -e "${green}ACME 默认续期命令为：${yellow}systemctl restart x-ui || rc-service x-ui restart${plain}"
+    echo -e "${green}每次申请或续期证书时都会执行此命令。${plain}"
     if [[ "$NONINTERACTIVE" == "1" ]]; then
         setReloadcmd="n"
     else
@@ -850,16 +850,16 @@ ssl_cert_issue() {
         read -rp "请选择：" choice
         case "$choice" in
             1)
-                echo -e "${green}Reloadcmd is: systemctl reload nginx ; systemctl restart x-ui${plain}"
+                echo -e "${green}续期命令：systemctl reload nginx ; systemctl restart x-ui${plain}"
                 reloadCmd="systemctl reload nginx ; systemctl restart x-ui"
                 ;;
             2)
-                echo -e "${yellow}It's recommended to put x-ui restart at the end${plain}"
+                echo -e "${yellow}建议将重启 x-ui 的命令放在最后${plain}"
                 read -rp "请输入自定义 reloadcmd：" reloadCmd
-                echo -e "${green}Reloadcmd is: ${reloadCmd}${plain}"
+                echo -e "${green}续期命令：${reloadCmd}${plain}"
                 ;;
             *)
-                echo -e "${green}Keeping default reloadcmd${plain}"
+                echo -e "${green}保持默认续期命令${plain}"
                 ;;
         esac
     fi
@@ -878,9 +878,9 @@ ssl_cert_issue() {
     fi
 
     if [[ -f "/root/cert/${domain}/privkey.pem" && -f "/root/cert/${domain}/fullchain.pem" && (${installRc} -eq 0 || ${installWroteFiles} -eq 1) ]]; then
-        echo -e "${green}Installing certificate succeeded, enabling auto renew...${plain}"
+        echo -e "${green}证书安装成功，正在启用自动续期…${plain}"
     else
-        echo -e "${red}Installing certificate failed, exiting.${plain}"
+        echo -e "${red}证书安装失败，正在退出。${plain}"
         if [[ ${cert_exists} -eq 0 ]]; then
             rm -rf ~/.acme.sh/${domain} ~/.acme.sh/${domain}_ecc
         fi
@@ -891,13 +891,13 @@ ssl_cert_issue() {
     # enable auto-renew
     ~/.acme.sh/acme.sh --upgrade --auto-upgrade
     if [ $? -ne 0 ]; then
-        echo -e "${yellow}Auto renew setup had issues, certificate details:${plain}"
+        echo -e "${yellow}自动续期配置遇到问题，证书详情：${plain}"
         ls -lah /root/cert/${domain}/
         # Secure permissions: private key readable only by owner
         chmod 600 $certPath/privkey.pem 2> /dev/null
         chmod 644 $certPath/fullchain.pem 2> /dev/null
     else
-        echo -e "${green}Auto renew succeeded, certificate details:${plain}"
+        echo -e "${green}自动续期配置成功，证书详情：${plain}"
         ls -lah /root/cert/${domain}/
         # Secure permissions: private key readable only by owner
         chmod 600 $certPath/privkey.pem 2> /dev/null
@@ -919,18 +919,18 @@ ssl_cert_issue() {
 
         if [[ -f "$webCertFile" && -f "$webKeyFile" ]]; then
             ${xui_folder}/x-ui cert -webCert "$webCertFile" -webCertKey "$webKeyFile"
-            echo -e "${green}Certificate paths set for the panel${plain}"
-            echo -e "${green}Certificate File: $webCertFile${plain}"
-            echo -e "${green}Private Key File: $webKeyFile${plain}"
+            echo -e "${green}面板证书路径已设置${plain}"
+            echo -e "${green}证书文件：$webCertFile${plain}"
+            echo -e "${green}私钥文件：$webKeyFile${plain}"
             echo ""
-            echo -e "${green}Access URL: https://${domain}:${existing_port}/${existing_webBasePath}${plain}"
-            echo -e "${yellow}Panel will restart to apply SSL certificate...${plain}"
+            echo -e "${green}访问地址：https://${domain}:${existing_port}/${existing_webBasePath}${plain}"
+            echo -e "${yellow}面板将重启以应用 SSL 证书…${plain}"
             systemctl restart x-ui 2> /dev/null || rc-service x-ui restart 2> /dev/null
         else
-            echo -e "${red}Error: Certificate or private key file not found for domain: $domain.${plain}"
+            echo -e "${red}错误：未找到域名 $domain 对应的证书或私钥文件。${plain}"
         fi
     else
-        echo -e "${yellow}Skipping panel path setting.${plain}"
+        echo -e "${yellow}跳过面板证书路径设置。${plain}"
     fi
 
     return 0
@@ -947,24 +947,24 @@ prompt_and_setup_ssl() {
     SSL_SCHEME="https"
 
     echo -e "${yellow}请选择 SSL 证书配置方式：${plain}"
-    echo -e "${green}1.${plain} Let's Encrypt for Domain (90-day validity, auto-renews)"
-    echo -e "${green}2.${plain} Let's Encrypt for IP Address (6-day validity, auto-renews)"
-    echo -e "${green}3.${plain} Custom SSL Certificate (Path to existing files)"
-    echo -e "${green}4.${plain} Skip SSL (advanced — behind reverse proxy / SSH tunnel only)"
-    echo -e "${blue}Note:${plain} Options 1 & 2 require port 80 open. Option 3 requires manual paths."
-    echo -e "${blue}Note:${plain} Option 4 serves the panel over plain HTTP — only safe behind nginx/Caddy or an SSH tunnel."
+    echo -e "${green}1.${plain} Let's Encrypt 域名证书（有效期 90 天，自动续期）"
+    echo -e "${green}2.${plain} Let's Encrypt IP 证书（有效期 6 天，自动续期）"
+    echo -e "${green}3.${plain} 自定义 SSL 证书（使用现有证书文件路径）"
+    echo -e "${green}4.${plain} 跳过 SSL（高级选项，仅适用于反向代理或 SSH 隧道）"
+    echo -e "${blue}提示：${plain} 选项 1 和 2 需要开放 80 端口。选项 3 需要手动填写证书路径。"
+    echo -e "${blue}提示：${plain} 选项 4 将通过 HTTP 明文提供面板，仅建议在 nginx/Caddy 反向代理或 SSH 隧道后使用。"
     if [[ "$NONINTERACTIVE" == "1" ]]; then
         case "${XUI_SSL_MODE:-none}" in
             domain) ssl_choice="1" ;;
             ip) ssl_choice="2" ;;
             none | "") ssl_choice="4" ;;
             *)
-                echo -e "${yellow}Unknown XUI_SSL_MODE='${XUI_SSL_MODE}', defaulting to none (HTTP).${plain}"
+                echo -e "${yellow}未知的 XUI_SSL_MODE='${XUI_SSL_MODE}'，将默认跳过 SSL（HTTP）。${plain}"
                 ssl_choice="4"
                 ;;
         esac
     else
-        read -rp "Choose an option (default 2 for IP): " ssl_choice
+        read -rp "请选择 [默认 2：IP 证书]：" ssl_choice
         ssl_choice="${ssl_choice// /}" # Trim whitespace
 
         # Default to 2 (IP cert) if input is empty or invalid (not 1, 3 or 4)
@@ -976,7 +976,7 @@ prompt_and_setup_ssl() {
     case "$ssl_choice" in
         1)
             # User chose Let's Encrypt domain option
-            echo -e "${green}Using Let's Encrypt for domain certificate...${plain}"
+            echo -e "${green}正在使用 Let's Encrypt 申请域名证书…${plain}"
             if ssl_cert_issue; then
                 local cert_domain="${SSL_ISSUED_DOMAIN}"
                 if [[ -z "${cert_domain}" ]]; then
@@ -985,32 +985,32 @@ prompt_and_setup_ssl() {
 
                 if [[ -n "${cert_domain}" ]]; then
                     SSL_HOST="${cert_domain}"
-                    echo -e "${green}✓ SSL certificate configured successfully with domain: ${cert_domain}${plain}"
+                    echo -e "${green}✓ 已成功配置域名 ${cert_domain} 的 SSL 证书${plain}"
                 else
-                    echo -e "${yellow}SSL setup may have completed, but domain extraction failed${plain}"
+                    echo -e "${yellow}SSL 证书可能已配置完成，但无法识别域名${plain}"
                     SSL_HOST="${server_ip}"
                 fi
             else
-                echo -e "${red}SSL certificate setup failed for domain mode.${plain}"
+                echo -e "${red}域名证书配置失败。${plain}"
                 SSL_HOST="${server_ip}"
             fi
             ;;
         2)
             # User chose Let's Encrypt IP certificate option
-            echo -e "${green}Using Let's Encrypt for IP certificate (shortlived profile)...${plain}"
+            echo -e "${green}正在使用 Let's Encrypt 配置短期 IP 证书…${plain}"
 
             # Confirm the auto-detected IP before issuing for it: with asymmetric
             # routing / multi-WAN the echo services can return a transit address.
             if [[ "$NONINTERACTIVE" != "1" ]]; then
                 local ip_confirm=""
-                read -rp "Is ${server_ip} the correct incoming public IPv4 address for this server? [Default y]: " ip_confirm
+                read -rp "检测到公网 IPv4 地址为 ${server_ip}，确认这是此服务器的正确入站地址吗？[默认 y]：" ip_confirm
                 if [[ -n "$ip_confirm" && "$ip_confirm" != "y" && "$ip_confirm" != "Y" ]]; then
                     server_ip=""
                     while [[ -z "$server_ip" ]]; do
                         read -rp "请输入服务器公网 IPv4 地址：" server_ip
                         server_ip="${server_ip// /}"
                         if [[ ! "$server_ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-                            echo -e "${red}Invalid IPv4 address. Please try again.${plain}"
+                            echo -e "${red}IPv4 地址无效，请重试。${plain}"
                             server_ip=""
                         fi
                     done
@@ -1019,7 +1019,7 @@ prompt_and_setup_ssl() {
 
             # Ask for optional IPv6
             local ipv6_addr=""
-            prompt_or_default ipv6_addr "Do you have an IPv6 address to include? (leave empty to skip): " "" XUI_SSL_IPV6
+            prompt_or_default ipv6_addr "是否有需要一并使用的 IPv6 地址？（留空则跳过）：" "" XUI_SSL_IPV6
             ipv6_addr="${ipv6_addr// /}" # Trim whitespace
 
             # Stop panel if running (port 80 needed)
@@ -1032,15 +1032,15 @@ prompt_and_setup_ssl() {
             setup_ip_certificate "${server_ip}" "${ipv6_addr}"
             if [ $? -eq 0 ]; then
                 SSL_HOST="${server_ip}"
-                echo -e "${green}✓ Let's Encrypt IP certificate configured successfully${plain}"
+                echo -e "${green}✓ Let's Encrypt IP 证书配置成功${plain}"
             else
-                echo -e "${red}✗ IP certificate setup failed. Please check port 80 is open.${plain}"
+                echo -e "${red}✗ IP 证书配置失败，请确认 80 端口已开放。${plain}"
                 SSL_HOST="${server_ip}"
             fi
             ;;
         3)
             # User chose Custom Paths (User Provided) option
-            echo -e "${green}Using custom existing certificate...${plain}"
+            echo -e "${green}正在使用已有的自定义证书…${plain}"
             local custom_cert=""
             local custom_key=""
             local custom_domain=""
@@ -1058,11 +1058,11 @@ prompt_and_setup_ssl() {
                 if [[ -f "$custom_cert" && -r "$custom_cert" && -s "$custom_cert" ]]; then
                     break
                 elif [[ ! -f "$custom_cert" ]]; then
-                    echo -e "${red}Error: File does not exist! Try again.${plain}"
+                    echo -e "${red}错误：文件不存在，请重试。${plain}"
                 elif [[ ! -r "$custom_cert" ]]; then
-                    echo -e "${red}Error: File exists but is not readable (check permissions)!${plain}"
+                    echo -e "${red}错误：文件存在但不可读，请检查权限。${plain}"
                 else
-                    echo -e "${red}Error: File is empty!${plain}"
+                    echo -e "${red}错误：文件为空。${plain}"
                 fi
             done
 
@@ -1075,11 +1075,11 @@ prompt_and_setup_ssl() {
                 if [[ -f "$custom_key" && -r "$custom_key" && -s "$custom_key" ]]; then
                     break
                 elif [[ ! -f "$custom_key" ]]; then
-                    echo -e "${red}Error: File does not exist! Try again.${plain}"
+                    echo -e "${red}错误：文件不存在，请重试。${plain}"
                 elif [[ ! -r "$custom_key" ]]; then
-                    echo -e "${red}Error: File exists but is not readable (check permissions)!${plain}"
+                    echo -e "${red}错误：文件存在但不可读，请检查权限。${plain}"
                 else
-                    echo -e "${red}Error: File is empty!${plain}"
+                    echo -e "${red}错误：文件为空。${plain}"
                 fi
             done
 
@@ -1093,18 +1093,18 @@ prompt_and_setup_ssl() {
                 SSL_HOST="${server_ip}"
             fi
 
-            echo -e "${green}✓ Custom certificate paths applied.${plain}"
-            echo -e "${yellow}Note: You are responsible for renewing these files externally.${plain}"
+            echo -e "${green}✓ 自定义证书路径已应用。${plain}"
+            echo -e "${yellow}提示：这些证书文件需要由你在外部自行续期。${plain}"
 
             systemctl restart x-ui > /dev/null 2>&1 || rc-service x-ui restart > /dev/null 2>&1
             ;;
         4)
             echo ""
-            echo -e "${red}⚠ Panel will be installed WITHOUT SSL/TLS.${plain}"
-            echo -e "${yellow}Login credentials and cookies will travel as plain HTTP.${plain}"
-            echo -e "${yellow}Only safe when:${plain}"
-            echo -e "${yellow}  • A reverse proxy (nginx, Caddy, Traefik) terminates TLS for you, or${plain}"
-            echo -e "${yellow}  • You access the panel exclusively via SSH tunnel${plain}"
+            echo -e "${red}⚠ 面板将不启用 SSL/TLS。${plain}"
+            echo -e "${yellow}登录凭据和 Cookie 将通过未加密的 HTTP 传输。${plain}"
+            echo -e "${yellow}仅在以下情况下安全：${plain}"
+            echo -e "${yellow}  • 由反向代理（nginx、Caddy、Traefik）负责 TLS 加密；或${plain}"
+            echo -e "${yellow}  • 仅通过 SSH 隧道访问面板${plain}"
             echo ""
 
             SSL_SCHEME="http"
@@ -1115,14 +1115,14 @@ prompt_and_setup_ssl() {
                 # Cloud images must stay reachable on their public interface.
                 bind_local="n"
             else
-                read -rp "Bind the panel to 127.0.0.1 only? (recommended — forces SSH tunnel / reverse-proxy access) [y/N]: " bind_local
+                read -rp "是否仅将面板绑定到 127.0.0.1？（推荐，可强制通过 SSH 隧道或反向代理访问）[y/N]：" bind_local
             fi
             if [[ "$bind_local" == "y" || "$bind_local" == "Y" ]]; then
                 ${xui_folder}/x-ui setting -listenIP "127.0.0.1" > /dev/null 2>&1
                 SSL_HOST="127.0.0.1"
-                echo -e "${green}✓ Panel bound to 127.0.0.1 only. It is now unreachable from the public internet.${plain}"
+                echo -e "${green}✓ 面板现仅绑定到 127.0.0.1，无法从公网直接访问。${plain}"
                 echo ""
-                echo -e "${green}SSH Port Forwarding — open the panel from your local machine via:${plain}"
+                echo -e "${green}SSH 端口转发：在本地电脑运行以下命令访问面板：${plain}"
                 echo -e "  标准 SSH 命令："
                 echo -e "  ${yellow}ssh -L 2222:127.0.0.1:${panel_port} root@${server_ip}${plain}"
                 echo -e "  如果使用 SSH 密钥："
@@ -1130,16 +1130,16 @@ prompt_and_setup_ssl() {
                 echo -e "  然后在浏览器中打开："
                 echo -e "  ${yellow}http://localhost:2222/${web_base_path}${plain}"
                 echo ""
-                echo -e "${yellow}Alternative: point a reverse proxy (nginx/Caddy) at 127.0.0.1:${panel_port} and let it terminate TLS.${plain}"
+                echo -e "${yellow}也可以将反向代理（nginx/Caddy）指向 127.0.0.1:${panel_port}，由代理处理 TLS 加密。${plain}"
             else
-                echo -e "${yellow}Panel will listen on all interfaces over plain HTTP. Make sure something else is terminating TLS in front of it.${plain}"
+                echo -e "${yellow}面板将通过未加密的 HTTP 监听所有网络接口，请确保前置服务负责 TLS 加密。${plain}"
             fi
 
             systemctl restart x-ui > /dev/null 2>&1 || rc-service x-ui restart > /dev/null 2>&1
-            echo -e "${green}✓ SSL setup skipped.${plain}"
+            echo -e "${green}✓ 已跳过 SSL 配置。${plain}"
             ;;
         *)
-            echo -e "${red}Invalid option. Skipping SSL setup.${plain}"
+            echo -e "${red}选项无效，跳过 SSL 配置。${plain}"
             SSL_HOST="${server_ip}"
             ;;
     esac
@@ -1195,7 +1195,7 @@ config_after_install() {
                 read -rp "请输入服务器公网 IPv4 地址：" server_ip
                 server_ip="${server_ip// /}"
                 if [[ ! "$server_ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-                    echo -e "${red}Invalid IPv4 address. Please try again.${plain}"
+                    echo -e "${red}IPv4 地址无效，请重试。${plain}"
                     server_ip=""
                 fi
             done
@@ -1356,9 +1356,9 @@ EOF
             echo -e "${green}═══════════════════════════════════════════${plain}"
             echo -e "${green}     SSL 证书配置（推荐）   ${plain}"
             echo -e "${green}═══════════════════════════════════════════${plain}"
-            echo -e "${yellow}SSL is strongly recommended. Skip only if a reverse proxy${plain}"
-            echo -e "${yellow}or SSH tunnel handles TLS for you.${plain}"
-            echo -e "${yellow}Let's Encrypt now supports both domains and IP addresses!${plain}"
+            echo -e "${yellow}强烈建议启用 SSL。只有在反向代理${plain}"
+            echo -e "${yellow}或 SSH 隧道已为你处理 TLS 时才跳过。${plain}"
+            echo -e "${yellow}Let's Encrypt 现在同时支持域名和 IP 地址证书！${plain}"
             echo ""
 
             prompt_and_setup_ssl "${config_port}" "${config_webBasePath}" "${server_ip}"
@@ -1381,9 +1381,9 @@ EOF
             echo -e "${green}═══════════════════════════════════════════${plain}"
             echo -e "${yellow}⚠ 重要：请妥善保存以上登录凭据！${plain}"
             if [[ "$SSL_SCHEME" == "https" ]]; then
-                echo -e "${yellow}⚠ SSL Certificate: Enabled and configured${plain}"
+                echo -e "${yellow}⚠ SSL 证书：已启用并配置${plain}"
             else
-                echo -e "${yellow}⚠ SSL Certificate: Skipped — panel is HTTP-only. Use a reverse proxy or SSH tunnel.${plain}"
+                echo -e "${yellow}⚠ SSL 证书：已跳过，面板仅使用 HTTP。请通过反向代理或 SSH 隧道访问。${plain}"
             fi
 
             if [[ "$db_choice" == "2" ]]; then
@@ -1434,7 +1434,7 @@ EOF
                 echo -e "${green}═══════════════════════════════════════════${plain}"
                 echo -e "${green}     SSL 证书配置（推荐）   ${plain}"
                 echo -e "${green}═══════════════════════════════════════════${plain}"
-                echo -e "${yellow}Let's Encrypt now supports both domains and IP addresses!${plain}"
+                echo -e "${yellow}Let's Encrypt 现在同时支持域名和 IP 地址证书！${plain}"
                 echo ""
                 prompt_and_setup_ssl "${existing_port}" "${config_webBasePath}" "${server_ip}"
                 echo -e "${green}Access URL:  ${SSL_SCHEME}://${SSL_HOST}:${existing_port}/${config_webBasePath}${plain}"
@@ -1475,12 +1475,12 @@ EOF
             echo -e "${green}═══════════════════════════════════════════${plain}"
             echo -e "${green}     SSL 证书配置（推荐）   ${plain}"
             echo -e "${green}═══════════════════════════════════════════${plain}"
-            echo -e "${yellow}Let's Encrypt now supports both domains and IP addresses!${plain}"
+            echo -e "${yellow}Let's Encrypt 现在同时支持域名和 IP 地址证书！${plain}"
             echo ""
             prompt_and_setup_ssl "${existing_port}" "${existing_webBasePath}" "${server_ip}"
             echo -e "${green}Access URL:  ${SSL_SCHEME}://${SSL_HOST}:${existing_port}/${existing_webBasePath}${plain}"
         else
-            echo -e "${green}SSL certificate already configured. No action needed.${plain}"
+            echo -e "${green}SSL 证书已配置，无需操作。${plain}"
         fi
     fi
 
