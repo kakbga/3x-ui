@@ -124,7 +124,7 @@ confirm_restart() {
 }
 
 before_show_menu() {
-    echo && echo -n -e "${yellow}Press enter to return to the main menu: ${plain}" && read -r temp
+    echo && echo -n -e "${yellow}按回车键返回主菜单： ${plain}" && read -r temp
     show_menu
 }
 
@@ -486,12 +486,12 @@ check_config() {
                 start 0 > /dev/null 2>&1
             else
                 LOGE "IP certificate setup failed."
-                echo -e "${yellow}You can try again via main menu option 20 (SSL Certificate Management).${plain}"
+                echo -e "${yellow}You can try again via main menu option 20 (SSL 证书管理).${plain}"
                 start 0 > /dev/null 2>&1
             fi
         else
             echo -e "${yellow}Access URL: http://${server_ip}:${existing_port}${existing_webBasePath}${plain}"
-            echo -e "${yellow}For security, please configure SSL certificate using main menu option 20 (SSL Certificate Management)${plain}"
+            echo -e "${yellow}For security, please configure SSL certificate using main menu option 20 (SSL 证书管理)${plain}"
         fi
     fi
 }
@@ -762,7 +762,7 @@ show_log() {
 }
 
 bbr_menu() {
-    echo -e "${green}\t1.${plain} Enable BBR"
+    echo -e "${green}\t1.${plain} 启用 BBR"
     echo -e "${green}\t2.${plain} Disable BBR"
     echo -e "${green}\t0.${plain} Back to Main Menu"
     read -rp "Choose an option: " choice
@@ -822,7 +822,7 @@ enable_bbr() {
         before_show_menu
     fi
 
-    # Enable BBR
+    # 启用 BBR
     if [ -d "/etc/sysctl.d/" ]; then
         {
             echo "#$(sysctl -n net.core.default_qdisc):$(sysctl -n net.ipv4.tcp_congestion_control)"
@@ -3313,7 +3313,7 @@ migrate_to_postgres() {
     if check_status; then
         LOGI "Migration complete. The panel is now running on PostgreSQL."
     else
-        LOGE "Panel did not come up. Check logs (main menu option 17). Your SQLite data is left intact."
+        LOGE "Panel did not come up. 查看日志 (main menu option 17). Your SQLite data is left intact."
     fi
 }
 
@@ -3479,24 +3479,24 @@ show_usage() {
     echo -e "┌────────────────────────────────────────────────────────────────┐
 │  ${blue}x-ui control menu usages (subcommands):${plain}                       │
 │                                                                │
-│  ${blue}x-ui${plain}                       - Admin Management Script          │
+│  ${blue}x-ui${plain}                       - 管理脚本          │
 │  ${blue}x-ui start${plain}                 - Start                            │
 │  ${blue}x-ui stop${plain}                  - Stop                             │
 │  ${blue}x-ui restart${plain}               - Restart                          │
-|  ${blue}x-ui restart-xray${plain}          - Restart Xray                     │
-│  ${blue}x-ui status${plain}                - Current Status                   │
-│  ${blue}x-ui settings${plain}              - Current Settings                 │
-│  ${blue}x-ui enable${plain}                - Enable Autostart on OS Startup   │
-│  ${blue}x-ui disable${plain}               - Disable Autostart on OS Startup  │
-│  ${blue}x-ui log${plain}                   - Check logs                       │
-│  ${blue}x-ui banlog${plain}                - Check Fail2ban ban logs          │
+|  ${blue}x-ui restart-xray${plain}          - 重启 Xray                     │
+│  ${blue}x-ui status${plain}                - 当前状态                   │
+│  ${blue}x-ui settings${plain}              - 当前设置                 │
+│  ${blue}x-ui enable${plain}                - 启用开机自启 on OS Startup   │
+│  ${blue}x-ui disable${plain}               - 禁用开机自启 on OS Startup  │
+│  ${blue}x-ui log${plain}                   - 查看日志                       │
+│  ${blue}x-ui banlog${plain}                - 查看 Fail2ban 封禁日志          │
 │  ${blue}x-ui update${plain}                - Update                           │
-│  ${blue}x-ui update-dev${plain}            - Update to Dev channel (latest)   │
-│  ${blue}x-ui update-all-geofiles${plain}   - Update all geo files             │
+│  ${blue}x-ui update-dev${plain}            - 更新到开发通道（最新版）   │
+│  ${blue}x-ui update-all-geofiles${plain}   - 更新全部 Geo 规则文件             │
 │  ${blue}x-ui migrateDB [file]${plain}      - Convert .db <-> .dump (SQLite)   │
 │  ${blue}x-ui pgclient [ver]${plain}        - Upgrade pg_dump/pg_restore tools │
 │  ${blue}x-ui legacy${plain}                - Legacy version                   │
-│  ${blue}x-ui install${plain}               - Install                          │
+│  ${blue}x-ui install${plain}               - 安装                             │
 │  ${blue}x-ui uninstall${plain}             - Uninstall                        │
 └────────────────────────────────────────────────────────────────┘"
 }
@@ -3504,46 +3504,46 @@ show_usage() {
 show_menu() {
     echo -e "
 ╔────────────────────────────────────────────────╗
-│  ${green}3X-UI Panel Management Script${plain}                │
-│  ${green}0.${plain} Exit Script                               │
+│  ${green}3X-UI 面板管理脚本${plain}                │
+│  ${green}0.${plain} 退出脚本                               │
 │────────────────────────────────────────────────│
-│  ${green}1.${plain} Install                                   │
-│  ${green}2.${plain} Update                                    │
-│  ${green}3.${plain} Update to Dev Channel (latest commit)     │
-│  ${green}4.${plain} Update Menu                               │
-│  ${green}5.${plain} Legacy Version                            │
-│  ${green}6.${plain} Uninstall                                 │
+│  ${green}1.${plain} 安装                                    │
+│  ${green}2.${plain} 更新                                    │
+│  ${green}3.${plain} 更新到开发版（最新提交）     │
+│  ${green}4.${plain} 更新菜单                               │
+│  ${green}5.${plain} 旧版本                            │
+│  ${green}6.${plain} 卸载                                    │
 │────────────────────────────────────────────────│
-│  ${green}7.${plain} Reset Username & Password                 │
-│  ${green}8.${plain} Reset Web Base Path                       │
-│  ${green}9.${plain} Reset Settings                            │
-│  ${green}10.${plain} Change Port                              │
-│  ${green}11.${plain} View Current Settings                    │
+│  ${green}7.${plain} 重置用户名和密码                 │
+│  ${green}8.${plain} 重置面板访问路径                       │
+│  ${green}9.${plain} 重置设置                            │
+│  ${green}10.${plain} 修改端口                              │
+│  ${green}11.${plain} 查看当前设置                    │
 │────────────────────────────────────────────────│
-│  ${green}12.${plain} Start                                    │
-│  ${green}13.${plain} Stop                                     │
-│  ${green}14.${plain} Restart                                  │
-|  ${green}15.${plain} Restart Xray                             │
-│  ${green}16.${plain} Check Status                             │
-│  ${green}17.${plain} Logs Management                          │
+│  ${green}12.${plain} 启动                                    │
+│  ${green}13.${plain} 停止                                    │
+│  ${green}14.${plain} 重启                                    │
+|  ${green}15.${plain} 重启 Xray                             │
+│  ${green}16.${plain} 查看运行状态                             │
+│  ${green}17.${plain} 日志管理                          │
 │────────────────────────────────────────────────│
-│  ${green}18.${plain} Enable Autostart                         │
-│  ${green}19.${plain} Disable Autostart                        │
+│  ${green}18.${plain} 启用开机自启                         │
+│  ${green}19.${plain} 禁用开机自启                        │
 │────────────────────────────────────────────────│
-│  ${green}20.${plain} SSL Certificate Management               │
-│  ${green}21.${plain} Cloudflare SSL Certificate               │
-│  ${green}22.${plain} IP Limit Management                      │
-│  ${green}23.${plain} Firewall Management                      │
-│  ${green}24.${plain} SSH Port Forwarding Management           │
-│  ${green}25.${plain} PostgreSQL Management                    │
+│  ${green}20.${plain} SSL 证书管理               │
+│  ${green}21.${plain} Cloudflare SSL 证书               │
+│  ${green}22.${plain} IP 限制管理                      │
+│  ${green}23.${plain} 防火墙管理                      │
+│  ${green}24.${plain} SSH 端口转发管理           │
+│  ${green}25.${plain} PostgreSQL 管理                    │
 │────────────────────────────────────────────────│
-│  ${green}26.${plain} Enable BBR                               │
-│  ${green}27.${plain} Update Geo Files                         │
-│  ${green}28.${plain} Speedtest by Ookla                       │
+│  ${green}26.${plain} 启用 BBR                               │
+│  ${green}27.${plain} 更新 Geo 规则文件                         │
+│  ${green}28.${plain} Ookla 网络测速                       │
 ╚────────────────────────────────────────────────╝
 "
     show_status
-    echo && read -rp "Please enter your selection [0-28]: " num
+    echo && read -rp "请输入选项 [0-28]： " num
 
     case "${num}" in
         0)
