@@ -10,7 +10,7 @@ xui_folder="${XUI_MAIN_FOLDER:=/usr/local/x-ui}"
 xui_service="${XUI_SERVICE:=/etc/systemd/system}"
 
 # check root
-[[ $EUID -ne 0 ]] && echo -e "${red}Fatal error: ${plain} Please run this script with root privilege \n " && exit 1
+[[ $EUID -ne 0 ]] && echo -e "${red}致命错误：${plain} 请使用 root 权限运行此脚本 \n " && exit 1
 
 # Check OS and set release variable
 if [[ -f /etc/os-release ]]; then
@@ -20,10 +20,10 @@ elif [[ -f /usr/lib/os-release ]]; then
     source /usr/lib/os-release
     release=$ID
 else
-    echo "Failed to check the system OS, please contact the author!" >&2
+    echo "无法识别操作系统，请联系项目维护者！" >&2
     exit 1
 fi
-echo "The OS release is: $release"
+echo "操作系统：$release"
 
 arch() {
     case "$(uname -m)" in
@@ -34,11 +34,11 @@ arch() {
         armv6* | armv6) echo 'armv6' ;;
         armv5* | armv5) echo 'armv5' ;;
         s390x) echo 's390x' ;;
-        *) echo -e "${green}Unsupported CPU architecture! ${plain}" && rm -f "$(realpath "$0")" && exit 1 ;;
+        *) echo -e "${green}不支持的 CPU 架构！ ${plain}" && rm -f "$(realpath "$0")" && exit 1 ;;
     esac
 }
 
-echo "Arch: $(arch)"
+echo "CPU 架构：$(arch)"
 
 # Non-interactive mode: triggered explicitly via XUI_NONINTERACTIVE=1, or
 # implicitly when stdin is not a TTY (e.g. `curl ... | bash`, cloud-init).
@@ -1212,10 +1212,10 @@ config_after_install() {
             local db_label="SQLite (/etc/x-ui/x-ui.db)"
             echo ""
             echo -e "${green}═══════════════════════════════════════════${plain}"
-            echo -e "${green}     Database Selection                    ${plain}"
+            echo -e "${green}     数据库选择                    ${plain}"
             echo -e "${green}═══════════════════════════════════════════${plain}"
-            echo -e "  1) SQLite     (default — recommended for < 500 clients)"
-            echo -e "  2) PostgreSQL (recommended for high client counts / many nodes)"
+            echo -e "  1) SQLite     (默认，建议少于 500 个客户端时使用)"
+            echo -e "  2) PostgreSQL (客户端较多或节点较多时推荐)"
             if [[ "$NONINTERACTIVE" == "1" ]]; then
                 if [[ "${XUI_DB_TYPE:-sqlite}" == "postgres" ]]; then
                     db_choice="2"
@@ -1369,17 +1369,17 @@ EOF
             # Display final credentials and access information
             echo ""
             echo -e "${green}═══════════════════════════════════════════${plain}"
-            echo -e "${green}     Panel Installation Complete!         ${plain}"
+            echo -e "${green}     面板安装完成！         ${plain}"
             echo -e "${green}═══════════════════════════════════════════${plain}"
-            echo -e "${green}Username:    ${config_username}${plain}"
-            echo -e "${green}Password:    ${config_password}${plain}"
-            echo -e "${green}Port:        ${config_port}${plain}"
-            echo -e "${green}WebBasePath: ${config_webBasePath}${plain}"
-            echo -e "${green}Database:    ${db_label}${plain}"
-            echo -e "${green}Access URL:  ${SSL_SCHEME}://${SSL_HOST}:${config_port}/${config_webBasePath}${plain}"
-            echo -e "${green}API Token:   ${config_apiToken}${plain}"
+            echo -e "${green}用户名：       ${config_username}${plain}"
+            echo -e "${green}密码：         ${config_password}${plain}"
+            echo -e "${green}端口：         ${config_port}${plain}"
+            echo -e "${green}面板路径：     ${config_webBasePath}${plain}"
+            echo -e "${green}数据库：       ${db_label}${plain}"
+            echo -e "${green}访问地址：     ${SSL_SCHEME}://${SSL_HOST}:${config_port}/${config_webBasePath}${plain}"
+            echo -e "${green}API 令牌：     ${config_apiToken}${plain}"
             echo -e "${green}═══════════════════════════════════════════${plain}"
-            echo -e "${yellow}⚠ IMPORTANT: Save these credentials securely!${plain}"
+            echo -e "${yellow}⚠ 重要：请妥善保存以上登录凭据！${plain}"
             if [[ "$SSL_SCHEME" == "https" ]]; then
                 echo -e "${yellow}⚠ SSL Certificate: Enabled and configured${plain}"
             else
@@ -1426,7 +1426,7 @@ EOF
             local config_webBasePath=$(gen_random_string 18)
             echo -e "${yellow}WebBasePath is missing or set to root. Generating a new one...${plain}"
             ${xui_folder}/x-ui setting -webBasePath "${config_webBasePath}"
-            echo -e "${green}New WebBasePath: ${config_webBasePath}${plain}"
+            echo -e "${green}New 面板路径：     ${config_webBasePath}${plain}"
 
             # If the panel is already installed but no certificate is configured, prompt for SSL now
             if [[ -z "${existing_cert}" ]]; then
@@ -1437,7 +1437,7 @@ EOF
                 echo -e "${yellow}Let's Encrypt now supports both domains and IP addresses!${plain}"
                 echo ""
                 prompt_and_setup_ssl "${existing_port}" "${config_webBasePath}" "${server_ip}"
-                echo -e "${green}Access URL:  ${SSL_SCHEME}://${SSL_HOST}:${existing_port}/${config_webBasePath}${plain}"
+                echo -e "${green}访问地址：     ${SSL_SCHEME}://${SSL_HOST}:${existing_port}/${config_webBasePath}${plain}"
             else
                 # If a cert already exists, just show the access URL
                 echo -e "${green}Access URL: https://${server_ip}:${existing_port}/${config_webBasePath}${plain}"
@@ -1478,7 +1478,7 @@ EOF
             echo -e "${yellow}Let's Encrypt now supports both domains and IP addresses!${plain}"
             echo ""
             prompt_and_setup_ssl "${existing_port}" "${existing_webBasePath}" "${server_ip}"
-            echo -e "${green}Access URL:  ${SSL_SCHEME}://${SSL_HOST}:${existing_port}/${existing_webBasePath}${plain}"
+            echo -e "${green}访问地址：     ${SSL_SCHEME}://${SSL_HOST}:${existing_port}/${existing_webBasePath}${plain}"
         else
             echo -e "${green}SSL certificate already configured. No action needed.${plain}"
         fi
@@ -2103,7 +2103,7 @@ install_x-ui() {
     # works out of the box (no-op when XUI_ENABLE_FAIL2BAN=false). Never fatal.
     setup_fail2ban
 
-    echo -e "${green}x-ui ${tag_version}${plain} installation finished, it is running now..."
+    echo -e "${green}x-ui ${tag_version}${plain} 安装完成，正在运行……"
     echo -e ""
     echo -e "┌───────────────────────────────────────────────────────┐
 │  ${blue}x-ui control menu usages (subcommands):${plain}              │
@@ -2118,13 +2118,13 @@ install_x-ui() {
 │  ${blue}x-ui disable${plain}      - Disable Autostart on OS Startup  │
 │  ${blue}x-ui log${plain}          - Check logs                       │
 │  ${blue}x-ui banlog${plain}       - Check Fail2ban ban logs          │
-│  ${blue}x-ui update${plain}       - Update                           │
+│  ${blue}x-ui update${plain}       - 更新面板                        │
 │  ${blue}x-ui legacy${plain}       - Legacy version                   │
 │  ${blue}x-ui install${plain}      - Install                          │
-│  ${blue}x-ui uninstall${plain}    - Uninstall                        │
+│  ${blue}x-ui uninstall${plain}    - 卸载面板                        │
 └───────────────────────────────────────────────────────┘"
 }
 
-echo -e "${green}Running...${plain}"
+echo -e "${green}运行中……${plain}"
 install_base
 install_x-ui $1
