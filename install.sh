@@ -1722,10 +1722,12 @@ _install_xui_service_unit() {
     return 0
 }
 
-# resolve_latest_tag selects this fork's rolling release.
+# resolve_latest_tag selects the latest stable release from this fork.
 resolve_latest_tag() {
-    # This fork publishes a rolling dev-latest build after each upstream sync.
-    echo "dev-latest"
+    local latest_url
+    latest_url=$(curl -fLsS --retry 3 --retry-delay 2 --connect-timeout 15 -o /dev/null -w '%{url_effective}' \
+        "https://github.com/kakbga/3x-ui/releases/latest") || return 1
+    printf '%s\n' "${latest_url##*/}"
 }
 
 # Releases publish <asset>.sha256 next to each archive. A mismatch or a failed
@@ -1780,7 +1782,7 @@ install_x-ui() {
     if [ $# == 0 ]; then
         tag_version=$(resolve_latest_tag)
         if [[ ! -n "$tag_version" ]]; then
-            echo -e "${red}获取 x-ui 版本失败，可能是 GitHub API 限制所致，请稍后重试。${plain}"
+            echo -e "${red}获取最新正式版标签失败，请检查网络后重试。${plain}"
             exit 1
         fi
         echo -e "获取到 x-ui 版本：${tag_version}，正在开始安装…"
