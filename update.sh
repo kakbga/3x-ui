@@ -530,13 +530,17 @@ update_x-ui() {
     echo -e "${green}正在下载新版 x-ui…${plain}"
 
     # XUI_UPDATE_TAG lets the panel target a specific release tag (e.g. the
-    # rolling dev-latest pre-release). Empty selects this fork's rolling build.
+    # rolling dev-latest pre-release). Empty selects this fork's latest stable release.
     if [[ -n "${XUI_UPDATE_TAG}" ]]; then
         tag_version="${XUI_UPDATE_TAG}"
         echo -e "${green}更新目标版本：${tag_version}${plain}"
     else
-        tag_version="dev-latest"
-        echo -e "${green}正在使用本仓库滚动版本：${tag_version}${plain}"
+        latest_url=$(${curl_bin} -fLsS --retry 3 --retry-delay 2 --connect-timeout 15 -o /dev/null -w '%{url_effective}' "https://github.com/kakbga/3x-ui/releases/latest")
+        if [[ $? -ne 0 || -z "$latest_url" ]]; then
+            _fail "ERROR: Failed to fetch the latest stable release from kakbga/3x-ui"
+        fi
+        tag_version="${latest_url##*/}"
+        echo -e "${green}正在使用本仓库最新正式版：${tag_version}${plain}"
     fi
     echo -e "获取到 x-ui 版本：${tag_version}，正在开始安装…"
     # x-ui.rc and the unit files must come from the binary's own release; only the
