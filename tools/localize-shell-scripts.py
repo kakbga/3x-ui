@@ -120,7 +120,7 @@ TRANSLATIONS = {
         "Installing PostgreSQL locally (non-interactive)...": "正在以非交互方式在本机安装 PostgreSQL…",
         "PostgreSQL installation failed in non-interactive mode; aborting.": "非交互模式下 PostgreSQL 安装失败，安装已中止。",
         "The panel was installed with PostgreSQL.": "面板已使用 PostgreSQL 完成安装。",
-        "Please use a newer version (at least v2.3.5). Exiting installation.": "请使用较新版本（至少 v2.3.5），安装程序即将退出。",
+        "Please use a newer version (at least v2.3.5). Exiting installation.": "请使用较新版本（至少 v1.0.0），安装程序即将退出。",
         "New WebBasePath: ${config_webBasePath}": "新的面板访问路径：${config_webBasePath}",
         "Default credentials detected. Security update required...": "检测到默认凭据，需要更新以提高安全性…",
         "Generated new random login credentials:": "已生成新的随机登录凭据：",
