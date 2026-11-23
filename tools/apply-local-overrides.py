@@ -79,6 +79,10 @@ def use_fork_dev_release() -> None:
     text = text.replace("https://raw.githubusercontent.com/MHSanaei/3x-ui/", "https://raw.githubusercontent.com/kakbga/3x-ui/")
     if "https://github.com/MHSanaei/3x-ui/releases/" in text:
         raise RuntimeError("install.sh still points at upstream release assets")
+    text = text.replace('min_version="2.3.5"', 'min_version="1.0.0"')
+    text = text.replace("请使用较新版本（至少 v2.3.5）", "请使用较新版本（至少 v1.0.0）")
+    if 'min_version="1.0.0"' not in text or "至少 v1.0.0" not in text:
+        raise RuntimeError("install.sh's minimum supported tag was not set to v1.0.0")
     install.write_text(text, encoding="utf-8", newline="\n")
 
     update = ROOT / "update.sh"
