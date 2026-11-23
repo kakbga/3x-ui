@@ -30,6 +30,8 @@ TRANSLATIONS = {
         "Input certificate path (keywords: .crt / fullchain): ": "请输入证书文件路径（通常为 .crt 或 fullchain）：",
         "Input private key path (keywords: .key / privatekey): ": "请输入私钥文件路径（通常为 .key 或 privatekey）：",
         "Panel Installation Complete!": "面板安装完成！",
+        "Got x-ui latest version: ${tag_version}, beginning the installation...": "获取到 x-ui 版本：${tag_version}，正在开始安装…",
+        "Installing the rolling dev build (tag: dev-latest). This is a per-commit pre-release, not a stable version.": "正在安装本仓库滚动开发版（dev-latest）；该版本随官网更新，不是稳定版。",
         "IMPORTANT: Save these credentials securely!": "重要：请妥善保存以上登录凭据！",
         "Database Selection": "数据库选择",
         "default — recommended for < 500 clients": "默认，建议少于 500 个客户端时使用",
@@ -83,7 +85,10 @@ TRANSLATIONS = {
         "https://raw.githubusercontent.com/mhsanaei/3x-ui/v$tag_version/install.sh": "https://raw.githubusercontent.com/kakbga/3x-ui/main/install.sh",
         "https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh": "https://raw.githubusercontent.com/kakbga/3x-ui/main/install.sh",
     },
-    "update.sh": {},
+    "update.sh": {
+        "Using update tag: ${tag_version}": "更新目标版本：${tag_version}",
+        "Got x-ui latest version: ${tag_version}, beginning the installation...": "获取到 x-ui 版本：${tag_version}，正在开始安装…",
+    },
 }
 
 
