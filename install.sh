@@ -111,7 +111,7 @@ select_panel_port() {
         [[ -z "${XUI_PANEL_PORT+x}" ]] || confirm=y
     else
         while true; do
-            if ! IFS= read -rp "Would you like to customize the Panel Port settings? (If not, a random port will be applied) [y/N]: " confirm; then
+            if ! IFS= read -rp "是否自定义面板端口？（否则将随机分配端口）[y/N]： " confirm; then
                 echo 'Cannot read the panel port confirmation; aborting.' >&2
                 return 1
             fi
@@ -144,7 +144,7 @@ select_panel_port() {
     while true; do
         if [[ "$NONINTERACTIVE" == 1 ]]; then
             port="$XUI_PANEL_PORT"
-        elif ! read -rp 'Please set up the panel port: ' port; then
+        elif ! read -rp '请设置面板端口：' port; then
             echo 'Cannot read the custom panel port; aborting.' >&2
             return 1
         fi
@@ -629,7 +629,7 @@ setup_ip_certificate() {
                 echo -e "${red}Port ${WebPort} is busy; cannot proceed in non-interactive mode.${plain}"
                 return 1
             fi
-            read -rp "Enter another port for acme.sh standalone listener (leave empty to abort): " alt_port
+            read -rp "请输入 acme.sh 独立验证所用端口（留空则取消）：" alt_port
             alt_port="${alt_port// /}"
             if [[ -z "${alt_port}" ]]; then
                 echo -e "${red}Port ${WebPort} is busy; cannot proceed.${plain}"
@@ -747,7 +747,7 @@ ssl_cert_issue() {
         fi
     else
         while true; do
-            read -rp "Please enter your domain name: " domain
+            read -rp "请输入域名：" domain
             domain="${domain// /}" # Trim whitespace
 
             if [[ -z "$domain" ]]; then
@@ -841,13 +841,13 @@ ssl_cert_issue() {
     if [[ "$NONINTERACTIVE" == "1" ]]; then
         setReloadcmd="n"
     else
-        read -rp "Would you like to modify --reloadcmd for ACME? (y/n): " setReloadcmd
+        read -rp "是否修改 ACME 的 --reloadcmd？(y/n)：" setReloadcmd
     fi
     if [[ "$setReloadcmd" == "y" || "$setReloadcmd" == "Y" ]]; then
         echo -e "\n${green}\t1.${plain} Preset: systemctl reload nginx ; systemctl restart x-ui"
         echo -e "${green}\t2.${plain} Input your own command"
         echo -e "${green}\t0.${plain} Keep default reloadcmd"
-        read -rp "Choose an option: " choice
+        read -rp "请选择：" choice
         case "$choice" in
             1)
                 echo -e "${green}Reloadcmd is: systemctl reload nginx ; systemctl restart x-ui${plain}"
@@ -855,7 +855,7 @@ ssl_cert_issue() {
                 ;;
             2)
                 echo -e "${yellow}It's recommended to put x-ui restart at the end${plain}"
-                read -rp "Please enter your custom reloadcmd: " reloadCmd
+                read -rp "请输入自定义 reloadcmd：" reloadCmd
                 echo -e "${green}Reloadcmd is: ${reloadCmd}${plain}"
                 ;;
             *)
@@ -911,7 +911,7 @@ ssl_cert_issue() {
     if [[ "$NONINTERACTIVE" == "1" ]]; then
         setPanel="y"
     else
-        read -rp "Would you like to set this certificate for the panel? (y/n): " setPanel
+        read -rp "是否将此证书用于面板？(y/n)：" setPanel
     fi
     if [[ "$setPanel" == "y" || "$setPanel" == "Y" ]]; then
         local webCertFile="/root/cert/${domain}/fullchain.pem"
@@ -946,7 +946,7 @@ prompt_and_setup_ssl() {
     local ssl_choice=""
     SSL_SCHEME="https"
 
-    echo -e "${yellow}Choose SSL certificate setup method:${plain}"
+    echo -e "${yellow}请选择 SSL 证书配置方式：${plain}"
     echo -e "${green}1.${plain} Let's Encrypt for Domain (90-day validity, auto-renews)"
     echo -e "${green}2.${plain} Let's Encrypt for IP Address (6-day validity, auto-renews)"
     echo -e "${green}3.${plain} Custom SSL Certificate (Path to existing files)"
@@ -1007,7 +1007,7 @@ prompt_and_setup_ssl() {
                 if [[ -n "$ip_confirm" && "$ip_confirm" != "y" && "$ip_confirm" != "Y" ]]; then
                     server_ip=""
                     while [[ -z "$server_ip" ]]; do
-                        read -rp "Please enter your server's public IPv4 address: " server_ip
+                        read -rp "请输入服务器公网 IPv4 地址：" server_ip
                         server_ip="${server_ip// /}"
                         if [[ ! "$server_ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
                             echo -e "${red}Invalid IPv4 address. Please try again.${plain}"
@@ -1046,12 +1046,12 @@ prompt_and_setup_ssl() {
             local custom_domain=""
 
             # 3.1 Request Domain to compose Panel URL later
-            read -rp "Please enter domain name certificate issued for: " custom_domain
+            read -rp "请输入证书对应的域名：" custom_domain
             custom_domain="${custom_domain// /}" # Remove spaces
 
             # 3.2 Loop for Certificate Path
             while true; do
-                read -rp "Input certificate path (keywords: .crt / fullchain): " custom_cert
+                read -rp "请输入证书文件路径（通常为 .crt 或 fullchain）：" custom_cert
                 # Strip quotes if present
                 custom_cert=$(echo "$custom_cert" | tr -d '"' | tr -d "'")
 
@@ -1068,7 +1068,7 @@ prompt_and_setup_ssl() {
 
             # 3.3 Loop for Private Key Path
             while true; do
-                read -rp "Input private key path (keywords: .key / privatekey): " custom_key
+                read -rp "请输入私钥文件路径（通常为 .key 或 privatekey）：" custom_key
                 # Strip quotes if present
                 custom_key=$(echo "$custom_key" | tr -d '"' | tr -d "'")
 
@@ -1123,11 +1123,11 @@ prompt_and_setup_ssl() {
                 echo -e "${green}✓ Panel bound to 127.0.0.1 only. It is now unreachable from the public internet.${plain}"
                 echo ""
                 echo -e "${green}SSH Port Forwarding — open the panel from your local machine via:${plain}"
-                echo -e "  Standard SSH command:"
+                echo -e "  标准 SSH 命令："
                 echo -e "  ${yellow}ssh -L 2222:127.0.0.1:${panel_port} root@${server_ip}${plain}"
-                echo -e "  If using an SSH key:"
+                echo -e "  如果使用 SSH 密钥："
                 echo -e "  ${yellow}ssh -i <sshkeypath> -L 2222:127.0.0.1:${panel_port} root@${server_ip}${plain}"
-                echo -e "  Then open in your browser:"
+                echo -e "  然后在浏览器中打开："
                 echo -e "  ${yellow}http://localhost:2222/${web_base_path}${plain}"
                 echo ""
                 echo -e "${yellow}Alternative: point a reverse proxy (nginx/Caddy) at 127.0.0.1:${panel_port} and let it terminate TLS.${plain}"
@@ -1139,7 +1139,7 @@ prompt_and_setup_ssl() {
             echo -e "${green}✓ SSL setup skipped.${plain}"
             ;;
         *)
-            echo -e "${red}Invalid option. Skipping SSL setup.${plain}"
+            echo -e "${red}选项无效，跳过 SSL 配置。${plain}"
             SSL_HOST="${server_ip}"
             ;;
     esac
@@ -1192,7 +1192,7 @@ config_after_install() {
         else
             echo -e "${yellow}Could not auto-detect server IP from any provider.${plain}"
             while [[ -z "$server_ip" ]]; do
-                read -rp "Please enter your server's public IPv4 address: " server_ip
+                read -rp "请输入服务器公网 IPv4 地址：" server_ip
                 server_ip="${server_ip// /}"
                 if [[ ! "$server_ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
                     echo -e "${red}Invalid IPv4 address. Please try again.${plain}"
@@ -1223,7 +1223,7 @@ config_after_install() {
                     db_choice="1"
                 fi
             else
-                read -rp "Choose [1]: " db_choice
+                read -rp "请选择 [1]：" db_choice
                 db_choice="${db_choice:-1}"
             fi
             if [[ "$db_choice" == "2" ]]; then
@@ -1250,7 +1250,7 @@ config_after_install() {
                             db_label="PostgreSQL (external)"
                             break
                         fi
-                        echo -e "${yellow}Installing PostgreSQL locally (non-interactive)...${plain}"
+                        echo -e "${yellow}正在以非交互方式安装本地 PostgreSQL……${plain}"
                         local pg_cred_file
                         pg_cred_file=$(mktemp 2> /dev/null) || pg_cred_file=$(mktemp -t x-ui-pg-creds.XXXXXXXX)
                         if [[ -n "${pg_cred_file}" ]] && xui_dsn=$(PG_CRED_FILE="${pg_cred_file}" install_postgres_local); then
@@ -1264,18 +1264,18 @@ config_after_install() {
                             break
                         fi
                         rm -f "${pg_cred_file}"
-                        echo -e "${red}PostgreSQL installation failed in non-interactive mode; aborting.${plain}"
-                        echo -e "${yellow}Set XUI_DB_DSN to use an existing server, or XUI_DB_TYPE=sqlite.${plain}"
+                        echo -e "${red}非交互模式下 PostgreSQL 安装失败，正在中止。${plain}"
+                        echo -e "${yellow}如需使用已有数据库，请设置 XUI_DB_DSN；也可设置 XUI_DB_TYPE=sqlite。${plain}"
                         exit 1
                     fi
                     echo ""
-                    echo -e "  1) Install PostgreSQL locally and create a dedicated user/db (recommended)"
-                    echo -e "  2) Use an existing PostgreSQL server (enter DSN)"
-                    read -rp "Choose [1]: " pg_mode
+                    echo -e "  1) 本机安装 PostgreSQL 并创建专用用户和数据库（推荐）"
+                    echo -e "  2) 使用已有 PostgreSQL 服务器（输入 DSN）"
+                    read -rp "请选择 [1]：" pg_mode
                     pg_mode="${pg_mode:-1}"
                     if [[ "$pg_mode" == "2" ]]; then
                         while [[ -z "$xui_dsn" ]]; do
-                            read -rp "Enter PostgreSQL DSN (postgres://user:pass@host:port/dbname?sslmode=disable): " xui_dsn
+                            read -rp "请输入 PostgreSQL DSN（postgres://user:pass@host:port/dbname?sslmode=disable）：" xui_dsn
                             xui_dsn="${xui_dsn// /}"
                         done
                         db_label="PostgreSQL (external)"
@@ -1300,11 +1300,11 @@ config_after_install() {
                             rm -f "${pg_cred_file}"
                             echo ""
                             echo -e "${red}PostgreSQL installation failed.${plain}"
-                            echo -e "  1) Retry local install"
-                            echo -e "  2) Enter an external DSN instead"
-                            echo -e "  3) Abort install"
-                            echo -e "  4) Fall back to SQLite"
-                            read -rp "Choose [1]: " pg_fail
+                            echo -e "  1) 重试本地安装"
+                            echo -e "  2) 改为输入外部数据库 DSN"
+                            echo -e "  3) 中止安装"
+                            echo -e "  4) 改用 SQLite"
+                            read -rp "请选择 [1]：" pg_fail
                             pg_fail="${pg_fail:-1}"
                             case "$pg_fail" in
                                 2) pg_mode="2" ;;
@@ -1354,11 +1354,11 @@ EOF
 
             echo ""
             echo -e "${green}═══════════════════════════════════════════${plain}"
-            echo -e "${green}     SSL Certificate Setup (RECOMMENDED)   ${plain}"
+            echo -e "${green}     SSL 证书配置（推荐）   ${plain}"
             echo -e "${green}═══════════════════════════════════════════${plain}"
-            echo -e "${yellow}SSL is strongly recommended. Skip only if a reverse proxy${plain}"
-            echo -e "${yellow}or SSH tunnel handles TLS for you.${plain}"
-            echo -e "${yellow}Let's Encrypt now supports both domains and IP addresses!${plain}"
+            echo -e "${yellow}强烈建议启用 SSL。仅当反向代理${plain}"
+            echo -e "${yellow}或 SSH 隧道负责 TLS 加密时才跳过。${plain}"
+            echo -e "${yellow}Let's Encrypt 现在同时支持域名和 IP 地址！${plain}"
             echo ""
 
             prompt_and_setup_ssl "${config_port}" "${config_webBasePath}" "${server_ip}"
@@ -1381,14 +1381,14 @@ EOF
             echo -e "${green}═══════════════════════════════════════════${plain}"
             echo -e "${yellow}⚠ 重要：请妥善保存以上登录凭据！${plain}"
             if [[ "$SSL_SCHEME" == "https" ]]; then
-                echo -e "${yellow}⚠ SSL Certificate: Enabled and configured${plain}"
+                echo -e "${yellow}⚠ SSL 证书：已启用并配置${plain}"
             else
                 echo -e "${yellow}⚠ SSL Certificate: Skipped — panel is HTTP-only. Use a reverse proxy or SSH tunnel.${plain}"
             fi
 
             if [[ "$db_choice" == "2" ]]; then
                 echo ""
-                echo -e "${green}PostgreSQL backup & restore is built into the panel:${plain}"
+                echo -e "${green}面板内置 PostgreSQL 备份与恢复功能：${plain}"
                 echo -e "  ${blue}${SSL_SCHEME}://${SSL_HOST}:${config_port}/${config_webBasePath}${plain} → Backup & Restore"
                 echo -e "${yellow}  Back Up downloads a pg_dump .dump file; Restore reloads it via pg_restore.${plain}"
             fi
@@ -1432,9 +1432,9 @@ EOF
             if [[ -z "${existing_cert}" ]]; then
                 echo ""
                 echo -e "${green}═══════════════════════════════════════════${plain}"
-                echo -e "${green}     SSL Certificate Setup (RECOMMENDED)   ${plain}"
+                echo -e "${green}     SSL 证书配置（推荐）   ${plain}"
                 echo -e "${green}═══════════════════════════════════════════${plain}"
-                echo -e "${yellow}Let's Encrypt now supports both domains and IP addresses!${plain}"
+                echo -e "${yellow}Let's Encrypt 现在同时支持域名和 IP 地址！${plain}"
                 echo ""
                 prompt_and_setup_ssl "${existing_port}" "${config_webBasePath}" "${server_ip}"
                 echo -e "${green}访问地址：     ${SSL_SCHEME}://${SSL_HOST}:${existing_port}/${config_webBasePath}${plain}"
@@ -1473,9 +1473,9 @@ EOF
         if [[ -z "$existing_cert" ]]; then
             echo ""
             echo -e "${green}═══════════════════════════════════════════${plain}"
-            echo -e "${green}     SSL Certificate Setup (RECOMMENDED)   ${plain}"
+            echo -e "${green}     SSL 证书配置（推荐）   ${plain}"
             echo -e "${green}═══════════════════════════════════════════${plain}"
-            echo -e "${yellow}Let's Encrypt now supports both domains and IP addresses!${plain}"
+            echo -e "${yellow}Let's Encrypt 现在同时支持域名和 IP 地址！${plain}"
             echo ""
             prompt_and_setup_ssl "${existing_port}" "${existing_webBasePath}" "${server_ip}"
             echo -e "${green}访问地址：     ${SSL_SCHEME}://${SSL_HOST}:${existing_port}/${existing_webBasePath}${plain}"
@@ -1728,13 +1728,13 @@ _install_xui_service_unit() {
 # fails with "Failed to fetch x-ui version"), and falls back to the API.
 resolve_latest_tag() {
     local url tag
-    url=$(curl -sSLI -o /dev/null -w '%{url_effective}' --retry 5 --retry-delay 3 --connect-timeout 15 --max-time 60 "https://github.com/kakbga/3x-ui/releases/latest" 2>/dev/null)
+    url=$(curl -sSLI -o /dev/null -w '%{url_effective}' --retry 5 --retry-delay 3 --connect-timeout 15 --max-time 60 "https://github.com/MHSanaei/3x-ui/releases/latest" 2>/dev/null)
     tag=${url##*/tag/}
     if [[ "$tag" != "$url" && -n "$tag" && "$tag" != "latest" ]]; then
         echo "$tag"
         return 0
     fi
-    curl -Ls --retry 5 --retry-delay 3 --connect-timeout 15 --max-time 60 "https://api.github.com/repos/kakbga/3x-ui/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'
+    curl -Ls --retry 5 --retry-delay 3 --connect-timeout 15 --max-time 60 "https://api.github.com/repos/MHSanaei/3x-ui/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'
 }
 
 # Releases publish <asset>.sha256 next to each archive. A mismatch or a failed
@@ -1793,7 +1793,7 @@ install_x-ui() {
             exit 1
         fi
         echo -e "Got x-ui latest version: ${tag_version}, beginning the installation..."
-        curl -fLR --retry 5 --retry-delay 3 --connect-timeout 15 --speed-limit 1 --speed-time 300 -o ${xui_folder}-linux-$(arch).tar.gz https://github.com/kakbga/3x-ui/releases/download/${tag_version}/x-ui-linux-$(arch).tar.gz
+        curl -fLR --retry 5 --retry-delay 3 --connect-timeout 15 --speed-limit 1 --speed-time 300 -o ${xui_folder}-linux-$(arch).tar.gz https://github.com/MHSanaei/3x-ui/releases/download/${tag_version}/x-ui-linux-$(arch).tar.gz
         if [[ $? -ne 0 ]]; then
             echo -e "${red}Downloading x-ui failed, please be sure that your server can access GitHub ${plain}"
             exit 1
@@ -1803,7 +1803,7 @@ install_x-ui() {
             echo -e "${red}Downloaded x-ui release archive is empty${plain}"
             exit 1
         fi
-        verify_release_checksum "https://github.com/kakbga/3x-ui/releases/download/${tag_version}/x-ui-linux-$(arch).tar.gz" "${xui_folder}-linux-$(arch).tar.gz"
+        verify_release_checksum "https://github.com/MHSanaei/3x-ui/releases/download/${tag_version}/x-ui-linux-$(arch).tar.gz" "${xui_folder}-linux-$(arch).tar.gz"
     else
         tag_version=$1
         # The rolling dev channel ships under a fixed, non-semver tag that is
@@ -1822,7 +1822,7 @@ install_x-ui() {
             fi
         fi
 
-        url="https://github.com/kakbga/3x-ui/releases/download/${tag_version}/x-ui-linux-$(arch).tar.gz"
+        url="https://github.com/MHSanaei/3x-ui/releases/download/${tag_version}/x-ui-linux-$(arch).tar.gz"
         echo -e "Beginning to install x-ui ${tag_version}"
         curl -fLR --retry 5 --retry-delay 3 --connect-timeout 15 --speed-limit 1 --speed-time 300 -o ${xui_folder}-linux-$(arch).tar.gz ${url}
         if [[ $? -ne 0 ]]; then
