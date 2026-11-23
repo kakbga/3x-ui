@@ -145,7 +145,7 @@ TRANSLATIONS = {
         "Setting up systemd unit...": "正在配置 systemd 服务…",
         "x-ui ${tag_version} installation finished, it is running now...": "x-ui ${tag_version} 安装完成，现已运行…",
         "Failed to download the checksum for $(basename \"${file}\") (HTTP ${code})": "下载 $(basename \"${file}\") 的校验和失败（HTTP ${code}）",
-        "Failed to fetch x-ui version, it may be due to GitHub API restrictions, please try it later": "获取 x-ui 版本失败，可能是 GitHub API 限制所致，请稍后重试。",
+        "Failed to fetch x-ui version, it may be due to GitHub API restrictions, please try it later": "获取最新正式版标签失败，请检查网络后重试。",
         "Failed to download x-ui.sh": "下载 x-ui.sh 失败",
         "Could not back up bin/ -- custom files there will not be preserved across this update": "无法备份 bin/；其中的自定义文件不会在此次更新后保留。",
         "Failed to extract the x-ui release archive -- the previous installation has already been removed, so the panel will not start until this is fixed; try running the installer again": "解压 x-ui 发布包失败。旧版程序已移除，问题修复前面板无法启动；请重新运行安装程序。",
