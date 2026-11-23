@@ -388,7 +388,9 @@ jobs:
 
           此版本已移除赞助展示，并提供中文安装交互提示。
 
-          这是滚动开发版，随官网更新，不是正式稳定版。"
+          这是滚动开发版，随官网更新，不是正式稳定版。
+
+          <!-- commit=${COMMIT} -->"
 
           # Force-move the dev-latest tag to this commit so the release tracks it.
           git tag -f dev-latest "${COMMIT}"
