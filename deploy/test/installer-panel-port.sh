@@ -140,7 +140,7 @@ expect_port() {
     local actual
     actual=$(awk 'last == "-port" {print; exit} {last = $0}' "$CASE_DIR/settings-args")
     [[ "$actual" == "$1" ]] || { echo "Port $actual, expected $1"; return 1; }
-    grep -Fxq 'Panel Installation Complete!' < <(sed 's/^[[:space:]]*//;s/[[:space:]]*$//' "$CASE_DIR/output")
+    grep -Fxq '面板安装完成！' < <(sed 's/^[[:space:]]*//;s/[[:space:]]*$//' "$CASE_DIR/output")
     [[ -f "$CASE_DIR/result" ]] || return 1
     [[ $(sed -n '3p' "$CASE_DIR/result") == "$1" ]] || return 1
     [[ $(sed -n '1p' "$CASE_DIR/result") == test-user ]] || return 1
@@ -151,7 +151,7 @@ expect_port() {
 expect_failure() {
     [[ "$status" != 0 ]] || { echo 'Configuration unexpectedly succeeded'; return 1; }
     [[ ! -f "$CASE_DIR/result" ]] || return 1
-    ! grep -q 'Panel Installation Complete!\|SSL Certificate Setup\|^ssl$' "$CASE_DIR/output" "$CASE_DIR/events"
+    ! grep -q '面板安装完成！\|SSL Certificate Setup\|^ssl$' "$CASE_DIR/output" "$CASE_DIR/events"
 }
 
 affirmative() {
