@@ -54,4 +54,4 @@ jobs:
         if: steps.commit.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.PUSH_TOKEN }}
-        run: gh workflow run release.yml --ref main
+        run: gh workflow run release.yml --ref main --repo kakbga/3x-ui
