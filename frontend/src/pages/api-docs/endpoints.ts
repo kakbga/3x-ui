@@ -455,8 +455,7 @@ export const sections: readonly Section[] = [
         path: '/panel/api/server/status',
         summary:
           'Real-time machine snapshot: CPU, memory, swap, disk, network IO, load averages, open connections, Xray state. Cached and refreshed every 2 seconds in the background.',
-        response:
-          '{\n  "success": true,\n  "obj": {\n    "cpu": 12.5,\n    "mem": { "current": 2147483648, "total": 8589934592 },\n    "swap": { "current": 0, "total": 4294967296 },\n    "disk": { "current": 53687091200, "total": 268435456000 },\n    "netIO": { "up": 1073741824, "down": 2147483648 },\n    "xray": { "state": "running", "version": "v25.10.31" },\n    "tcpCount": 42,\n    "load": { "load1": 0.5, "load5": 0.3, "load15": 0.2 }\n  }\n}',
+        responseSchema: 'Status',
       },
       {
         method: 'GET',
@@ -465,6 +464,13 @@ export const sections: readonly Section[] = [
           'Reports whether per-client IP limits can be enforced on this host. The panel uses it to gate the "IP Limit" field, since enforcement depends on Fail2ban being installed.',
         response:
           '{\n  "success": true,\n  "obj": {\n    "enabled": true,\n    "installed": true,\n    "usable": true,\n    "windows": false\n  }\n}',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/server/networkInterfaces',
+        summary:
+          'List network interface names and resolve the primary default-route interface in this panel network namespace. Requires an admin session or admin API token. No addresses or hardware identifiers are returned.',
+        responseSchema: 'NetworkInterfacesResponse',
       },
       {
         method: 'GET',
@@ -822,7 +828,7 @@ export const sections: readonly Section[] = [
             name: 'keepHostSettings',
             in: 'body (multipart)',
             type: 'boolean',
-            desc: "Keep this machine's addresses, certificates and node identity. Default true.",
+            desc: "Keep this machine's addresses, certificates, node identity, and network traffic interface selection. Default true.",
             optional: true,
             defaultValue: true,
           },
@@ -1398,6 +1404,96 @@ export const sections: readonly Section[] = [
         response: '{\n  "success": true\n}',
       },
       {
+        method: 'GET',
+        path: '/panel/api/clients/wireguardDevices',
+        summary: 'List WireGuard devices and their per-inbound addresses.',
+        description:
+          'The original credentials remain the primary device. Additional devices share their parent client email, traffic quota, expiry and enable state. Keep each device configuration on one device. Device-specific subscriptions use the existing subscription URL with the wgDevice query parameter set to the device ID.',
+        params: [{ name: 'email', in: 'query', type: 'string', desc: 'Client email.' }],
+        response:
+          '{\n  "success": true,\n  "obj": {\n    "limit": 5,\n    "inbounds": [\n      {\n        "inboundId": 3,\n        "devices": [\n          {\n            "id": "primary",\n            "name": "",\n            "enable": true,\n            "privateKey": "...",\n            "publicKey": "...",\n            "allowedIPs": [\n              "10.0.0.2/32"\n            ]\n          },\n          {\n            "id": "e3550bd1-0ba0-48b2-8a91-e57263a23d9d",\n            "name": "Phone",\n            "enable": true,\n            "privateKey": "...",\n            "publicKey": "...",\n            "allowedIPs": [\n              "10.0.0.3/32"\n            ]\n          }\n        ]\n      }\n    ]\n  }\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/clients/wireguardDevices',
+        summary: 'Create a WireGuard device on every attached WireGuard inbound.',
+        description:
+          'Keys are generated once and each inbound allocates an available tunnel address. All inbounds commit together. The default limit is 5 devices including primary.',
+        params: [
+          { name: 'email', in: 'query', type: 'string', desc: 'Client email.' },
+          {
+            name: 'name',
+            in: 'body (json)',
+            type: 'string',
+            desc: 'Device name with 1 to 64 characters on one line.',
+          },
+        ],
+        body: '{\n  "name": "Phone"\n}',
+        response:
+          '{\n  "success": true,\n  "obj": {\n    "limit": 5,\n    "inbounds": [\n      {\n        "inboundId": 3,\n        "devices": [\n          {\n            "id": "primary",\n            "name": "",\n            "enable": true,\n            "privateKey": "...",\n            "publicKey": "...",\n            "allowedIPs": [\n              "10.0.0.2/32"\n            ]\n          },\n          {\n            "id": "e3550bd1-0ba0-48b2-8a91-e57263a23d9d",\n            "name": "Phone",\n            "enable": true,\n            "privateKey": "...",\n            "publicKey": "...",\n            "allowedIPs": [\n              "10.0.0.3/32"\n            ]\n          }\n        ]\n      }\n    ]\n  }\n}',
+      },
+      {
+        method: 'PUT',
+        path: '/panel/api/clients/wireguardDevices/limit',
+        summary: 'Set the maximum number of WireGuard devices.',
+        description:
+          'The limit includes primary and disabled devices. Choose 1 to 32. Values below the current device count are rejected.',
+        params: [
+          { name: 'email', in: 'query', type: 'string', desc: 'Client email.' },
+          {
+            name: 'limit',
+            in: 'body (json)',
+            type: 'integer',
+            desc: 'Maximum device count including primary.',
+            defaultValue: 5,
+          },
+        ],
+        body: '{\n  "limit": 5\n}',
+        response:
+          '{\n  "success": true,\n  "obj": {\n    "limit": 5,\n    "inbounds": [\n      {\n        "inboundId": 3,\n        "devices": [\n          {\n            "id": "primary",\n            "name": "",\n            "enable": true,\n            "privateKey": "...",\n            "publicKey": "...",\n            "allowedIPs": [\n              "10.0.0.2/32"\n            ]\n          },\n          {\n            "id": "e3550bd1-0ba0-48b2-8a91-e57263a23d9d",\n            "name": "Phone",\n            "enable": true,\n            "privateKey": "...",\n            "publicKey": "...",\n            "allowedIPs": [\n              "10.0.0.3/32"\n            ]\n          }\n        ]\n      }\n    ]\n  }\n}',
+      },
+      {
+        method: 'PATCH',
+        path: '/panel/api/clients/wireguardDevices/:deviceId',
+        summary: 'Rename or enable a WireGuard device.',
+        description:
+          'The primary device is managed through the parent client. Disabled additional devices retain their reserved addresses.',
+        params: [
+          { name: 'email', in: 'query', type: 'string', desc: 'Client email.' },
+          { name: 'deviceId', in: 'path', type: 'string', desc: 'Additional device UUID.' },
+          {
+            name: 'name',
+            in: 'body (json)',
+            type: 'string',
+            optional: true,
+            desc: 'New device name.',
+          },
+          {
+            name: 'enable',
+            in: 'body (json)',
+            type: 'boolean',
+            optional: true,
+            desc: 'Whether the device can connect.',
+          },
+        ],
+        body: '{\n  "name": "Work phone",\n  "enable": true\n}',
+        response:
+          '{\n  "success": true,\n  "obj": {\n    "limit": 5,\n    "inbounds": [\n      {\n        "inboundId": 3,\n        "devices": [\n          {\n            "id": "primary",\n            "name": "",\n            "enable": true,\n            "privateKey": "...",\n            "publicKey": "...",\n            "allowedIPs": [\n              "10.0.0.2/32"\n            ]\n          },\n          {\n            "id": "e3550bd1-0ba0-48b2-8a91-e57263a23d9d",\n            "name": "Phone",\n            "enable": true,\n            "privateKey": "...",\n            "publicKey": "...",\n            "allowedIPs": [\n              "10.0.0.3/32"\n            ]\n          }\n        ]\n      }\n    ]\n  }\n}',
+      },
+      {
+        method: 'DELETE',
+        path: '/panel/api/clients/wireguardDevices/:deviceId',
+        summary: 'Delete an additional WireGuard device and release its address.',
+        description:
+          'The device is removed from every attached WireGuard inbound. Its previously downloaded configuration loses access after the configuration is applied.',
+        params: [
+          { name: 'email', in: 'query', type: 'string', desc: 'Client email.' },
+          { name: 'deviceId', in: 'path', type: 'string', desc: 'Additional device UUID.' },
+        ],
+        response:
+          '{\n  "success": true,\n  "obj": {\n    "limit": 5,\n    "inbounds": [\n      {\n        "inboundId": 3,\n        "devices": [\n          {\n            "id": "primary",\n            "name": "",\n            "enable": true,\n            "privateKey": "...",\n            "publicKey": "...",\n            "allowedIPs": [\n              "10.0.0.2/32"\n            ]\n          },\n          {\n            "id": "e3550bd1-0ba0-48b2-8a91-e57263a23d9d",\n            "name": "Phone",\n            "enable": true,\n            "privateKey": "...",\n            "publicKey": "...",\n            "allowedIPs": [\n              "10.0.0.3/32"\n            ]\n          }\n        ]\n      }\n    ]\n  }\n}',
+      },
+      {
         method: 'POST',
         path: '/panel/api/clients/resetAllTraffics',
         summary:
@@ -1668,27 +1764,45 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/clients/hwids/:email',
         summary:
-          'List registered HWID devices for a client with a short fingerprint. Full hashes are not exposed.',
+          'List registered HWID devices for a client with a short fingerprint and a blocked flag. Bans are scoped to the subscription ID shared by the client. Full hashes are not exposed.',
         params: [{ name: 'email', in: 'path', type: 'string', desc: 'Client email.' }],
         response:
-          '{\n  "success": true,\n  "obj": [\n    {\n      "id": 1,\n      "firstSeen": 1735000000000,\n      "lastSeen": 1735100000000,\n      "userAgent": "Happ/1.0",\n      "deviceOs": "android",\n      "osVersion": "15",\n      "deviceModel": "Pixel 9",\n      "fingerprint": "6ad17c93e821"\n    }\n  ]\n}',
+          '{\n  "success": true,\n  "obj": [\n    {\n      "id": 1,\n      "blocked": false,\n      "firstSeen": 1735000000000,\n      "lastSeen": 1735100000000,\n      "userAgent": "Happ/1.0",\n      "deviceOs": "android",\n      "osVersion": "15",\n      "deviceModel": "Pixel 9",\n      "fingerprint": "6ad17c93e821"\n    }\n  ]\n}',
       },
       {
         method: 'DELETE',
         path: '/panel/api/clients/hwids/:email',
         summary:
-          'Clear all registered HWID devices for a client so new devices can register again.',
+          'Clear unblocked HWID registrations for a client so devices can register again. Blocked devices and their bans are preserved.',
         params: [{ name: 'email', in: 'path', type: 'string', desc: 'Client email.' }],
       },
       {
         method: 'DELETE',
         path: '/panel/api/clients/hwids/:email/:id',
         summary:
-          'Remove a single registered HWID device by its id, freeing one slot under the HWID limit.',
+          'Remove a single unblocked HWID device by its id, freeing one slot under the HWID limit. A blocked device must be unblocked before it can be removed.',
         params: [
           { name: 'email', in: 'path', type: 'string', desc: 'Client email.' },
           { name: 'id', in: 'path', type: 'number', desc: 'Device id, from the list endpoint.' },
         ],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/clients/hwids/:email/:id/block',
+        summary:
+          'Block or unblock one device for the client subscription. Send an explicit boolean blocked value. A ban denies subscription bodies for that HWID even with limitHwid=0, does not consume a device slot, and survives clearing devices or changing the limit. It does not revoke copied credentials or identify requests with a different or missing HWID.',
+        params: [
+          { name: 'email', in: 'path', type: 'string', desc: 'Client email.' },
+          { name: 'id', in: 'path', type: 'number', desc: 'Device id, from the list endpoint.' },
+          {
+            name: 'blocked',
+            in: 'body (json)',
+            type: 'boolean',
+            desc: 'true to block the device, false to unblock it.',
+          },
+        ],
+        body: '{\n  "blocked": true\n}',
+        response: '{\n  "success": true,\n  "msg": "Updated successfully."\n}',
       },
       {
         method: 'POST',
@@ -2136,6 +2250,12 @@ export const sections: readonly Section[] = [
         path: '/panel/api/setting/testDiscord',
         summary: 'Test Discord bot connection by sending a test embed to the configured channel.',
         response: '{\n  "success": true,\n  "msg": "Test notification sent successfully"\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/setting/testWechat',
+        summary:
+          'Send a text test notification using the saved WeChat destination. Supports WeCom group robots and compatible personal WeChat webhook gateways. Requires WeChat notifications to be enabled.',
       },
       {
         method: 'GET',
