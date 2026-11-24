@@ -408,17 +408,17 @@ jobs:
           git tag -f dev-latest "${COMMIT}"
           retry git push -f origin refs/tags/dev-latest
 
-          # The release exists on every run but the first; edit-first avoids an
-          # existence probe that can 503 and mis-route into create (422).
-          if ! retry gh release edit dev-latest --prerelease --latest=false \
-              --title "开发版 ${short}" --notes "${notes}"; then
-            retry gh release create dev-latest --prerelease --latest=false \
-              --target "${COMMIT}" --title "开发版 ${short}" --notes "${notes}"
+         
+          # Recreate the rolling release so GitHub refreshes published_at.
+          # Keep the dev-latest git tag; only delete the old Release entry.
+          if gh release view dev-latest >/dev/null 2>&1; then
+            retry gh release delete dev-latest --yes
           fi
 
-          # Keep GitHub's release comparison target aligned with the moved tag.
-          release_id=$(retry gh release view dev-latest --json databaseId --jq .databaseId)
-          retry gh api --method PATCH "repos/${GITHUB_REPOSITORY}/releases/${release_id}" \
-            --field "target_commitish=${COMMIT}"
+          retry gh release create dev-latest \
+            --prerelease --latest=false \
+            --target "${COMMIT}" \
+            --title "开发版 ${short}" \
+            --notes "${notes}"
 
           retry gh release upload dev-latest dev-artifacts/*.tar.gz dev-artifacts/*.zip dev-artifacts/*.sha256 --clobber
