@@ -24,7 +24,7 @@ jobs:
         uses: docker/metadata-action@v6
         with:
           images: |
-            kakbga/3x-ui
+            lqutyy/3x-ui
             ghcr.io/kakbga/3x-ui
           tags: |
             type=ref,event=branch
@@ -57,6 +57,7 @@ jobs:
           push: true
           provenance: mode=max
           sbom: true
-          platforms: linux/amd64,linux/arm64/v8,linux/arm/v7,linux/arm/v6,linux/386
+          #platforms: linux/amd64,linux/arm64/v8,linux/arm/v7,linux/arm/v6,linux/386
+          platforms: linux/amd64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
