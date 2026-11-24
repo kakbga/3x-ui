@@ -400,9 +400,9 @@ read_menu_webbasepath() {
 }
 
 reset_webbasepath() {
-    echo -e "${yellow}正在重置面板访问路径${plain}"
+    echo -e "${yellow}Resetting Web Base Path${plain}"
     if ! confirm_menu_webbasepath 'Are you sure you want to change the web base path?'; then
-        echo -e "${yellow}操作已取消.${plain}"
+        echo -e "${yellow}Operation canceled.${plain}"
         return 0
     fi
 
@@ -413,7 +413,7 @@ reset_webbasepath() {
     echo '0. Cancel'
     while true; do
         if ! read -rp 'Please enter your selection [0-2]: ' selection; then
-            echo '操作已取消.'
+            echo 'Operation canceled.'
             return 0
         fi
         case "$selection" in
@@ -428,7 +428,7 @@ reset_webbasepath() {
             2)
                 while true; do
                     if ! IFS= read -rp 'Enter your custom Web Base Path: ' config_webBasePath; then
-                        echo '操作已取消.'
+                        echo 'Operation canceled.'
                         return 0
                     fi
                     if config_webBasePath=$(normalize_menu_webbasepath "$config_webBasePath"); then
@@ -438,7 +438,7 @@ reset_webbasepath() {
                 done
                 break
                 ;;
-            0) echo '操作已取消.'; return 0 ;;
+            0) echo 'Operation canceled.'; return 0 ;;
             *) echo 'Invalid selection. Choose 0, 1 or 2.' >&2 ;;
         esac
     done
@@ -453,7 +453,7 @@ reset_webbasepath() {
     fi
     echo -e "Your Web Base Path will be: ${green}${config_webBasePath}${plain}"
     if ! confirm_menu_webbasepath 'Apply this Web Base Path?'; then
-        echo '操作已取消.'
+        echo 'Operation canceled.'
         return 0
     fi
 
