@@ -15,18 +15,6 @@ export type ProcessState = z.infer<typeof ProcessStateSchema>;
 export const ProtocolSchema = z.string();
 export type Protocol = z.infer<typeof ProtocolSchema>;
 
-export const addrFamilySchema = z.number().int();
-export type addrFamily = z.infer<typeof addrFamilySchema>;
-
-export const staticEgressResolverSchema = z.string();
-export type staticEgressResolver = z.infer<typeof staticEgressResolverSchema>;
-
-export const trafficLocalApplyActionSchema = z.number().int();
-export type trafficLocalApplyAction = z.infer<typeof trafficLocalApplyActionSchema>;
-
-export const transportBitsSchema = z.number().int();
-export type transportBits = z.infer<typeof transportBitsSchema>;
-
 export const AllSettingSchema = z.object({
   datepicker: z.string(),
   discordAdminIds: z.string(),
@@ -66,6 +54,8 @@ export const AllSettingSchema = z.object({
   ldapUserAttr: z.string(),
   ldapUserFilter: z.string(),
   ldapVlessField: z.string(),
+  networkTrafficInterface: z.string(),
+  networkTrafficMode: z.enum(['legacy', 'auto', 'manual']),
   nodeDownThreshold: z.number().int().min(1).max(100),
   outboundDownThreshold: z.number().int().min(1).max(100),
   pageSize: z.number().int().min(0).max(1000),
@@ -132,6 +122,7 @@ export const AllSettingSchema = z.object({
   subHappTunType: z.string(),
   subHideSettings: z.boolean(),
   subHostSortMode: z.string(),
+  subHwidRejectWithConfig: z.boolean(),
   subIncyAnnounceUrl: z.string(),
   subIncyAppAutoDetect: z.boolean(),
   subIncyBannerBgColor: z.string(),
@@ -181,6 +172,8 @@ export const AllSettingSchema = z.object({
   subPort: z.number().int().min(1).max(65535),
   subProfileMode: z.string(),
   subProfileUrl: z.string(),
+  subRateLimit: z.number().int().min(1).max(1000),
+  subRateLimitEnable: z.boolean(),
   subRoutingRules: z.string(),
   subShowIdentityOnAllLinks: z.boolean(),
   subSupportUrl: z.string(),
@@ -212,6 +205,16 @@ export const AllSettingSchema = z.object({
   webKeyFile: z.string(),
   webListen: z.string(),
   webPort: z.number().int().min(1).max(65535),
+  wechatCpu: z.number().int().min(0).max(100),
+  wechatEnable: z.boolean(),
+  wechatEnabledEvents: z.string(),
+  wechatLang: z.string(),
+  wechatMemory: z.number().int().min(0).max(100),
+  wechatMode: z.string(),
+  wechatReportEnable: z.boolean(),
+  wechatRunTime: z.string(),
+  wechatToken: z.string(),
+  wechatWebhookURL: z.string(),
 });
 export type AllSetting = z.infer<typeof AllSettingSchema>;
 
@@ -240,6 +243,8 @@ export const AllSettingViewSchema = z.object({
   hasTgBotToken: z.boolean(),
   hasTwoFactorToken: z.boolean(),
   hasWarpSecret: z.boolean(),
+  hasWechatToken: z.boolean(),
+  hasWechatWebhookURL: z.boolean(),
   ipLimitAllowlist: z.string(),
   ldapAutoCreate: z.boolean(),
   ldapAutoDelete: z.boolean(),
@@ -262,6 +267,8 @@ export const AllSettingViewSchema = z.object({
   ldapUserAttr: z.string(),
   ldapUserFilter: z.string(),
   ldapVlessField: z.string(),
+  networkTrafficInterface: z.string(),
+  networkTrafficMode: z.enum(['legacy', 'auto', 'manual']),
   nodeDownThreshold: z.number().int().min(1).max(100),
   outboundDownThreshold: z.number().int().min(1).max(100),
   pageSize: z.number().int().min(0).max(1000),
@@ -328,6 +335,7 @@ export const AllSettingViewSchema = z.object({
   subHappTunType: z.string(),
   subHideSettings: z.boolean(),
   subHostSortMode: z.string(),
+  subHwidRejectWithConfig: z.boolean(),
   subIncyAnnounceUrl: z.string(),
   subIncyAppAutoDetect: z.boolean(),
   subIncyBannerBgColor: z.string(),
@@ -377,6 +385,8 @@ export const AllSettingViewSchema = z.object({
   subPort: z.number().int().min(1).max(65535),
   subProfileMode: z.string(),
   subProfileUrl: z.string(),
+  subRateLimit: z.number().int().min(1).max(1000),
+  subRateLimitEnable: z.boolean(),
   subRoutingRules: z.string(),
   subShowIdentityOnAllLinks: z.boolean(),
   subSupportUrl: z.string(),
@@ -408,6 +418,16 @@ export const AllSettingViewSchema = z.object({
   webKeyFile: z.string(),
   webListen: z.string(),
   webPort: z.number().int().min(1).max(65535),
+  wechatCpu: z.number().int().min(0).max(100),
+  wechatEnable: z.boolean(),
+  wechatEnabledEvents: z.string(),
+  wechatLang: z.string(),
+  wechatMemory: z.number().int().min(0).max(100),
+  wechatMode: z.string(),
+  wechatReportEnable: z.boolean(),
+  wechatRunTime: z.string(),
+  wechatToken: z.string(),
+  wechatWebhookURL: z.string(),
 });
 export type AllSettingView = z.infer<typeof AllSettingViewSchema>;
 
@@ -500,6 +520,8 @@ export const ClientSchema = z.object({
   trafficReset: z.enum(['never', 'hourly', 'daily', 'weekly', 'monthly']).optional(),
   trafficResetDay: z.number().int().min(1).max(31).optional(),
   updated_at: z.number().int().optional(),
+  wgDeviceLimit: z.number().int().optional(),
+  wireguardDevices: z.array(z.lazy(() => WireguardDeviceSchema)).optional(),
 });
 export type Client = z.infer<typeof ClientSchema>;
 
@@ -557,6 +579,8 @@ export const ClientRecordSchema = z.object({
   trafficResetDay: z.number().int(),
   updatedAt: z.number().int(),
   uuid: z.string(),
+  wgDeviceLimit: z.number().int(),
+  wireguardDevices: z.array(z.lazy(() => WireguardDeviceSchema)),
 });
 export type ClientRecord = z.infer<typeof ClientRecordSchema>;
 
@@ -919,6 +943,27 @@ export const MsgSchema = z.object({
 });
 export type Msg = z.infer<typeof MsgSchema>;
 
+export const NetworkInterfaceOptionSchema = z.object({
+  name: z.string(),
+  up: z.boolean(),
+});
+export type NetworkInterfaceOption = z.infer<typeof NetworkInterfaceOptionSchema>;
+
+export const NetworkInterfacesResponseSchema = z.object({
+  automatic: z.string(),
+  automaticError: z.string(),
+  interfaces: z.array(z.lazy(() => NetworkInterfaceOptionSchema)),
+});
+export type NetworkInterfacesResponse = z.infer<typeof NetworkInterfacesResponseSchema>;
+
+export const NetworkTrafficSelectionSchema = z.object({
+  available: z.boolean(),
+  error: z.string(),
+  mode: z.string(),
+  name: z.string(),
+});
+export type NetworkTrafficSelection = z.infer<typeof NetworkTrafficSelectionSchema>;
+
 export const NewUUIDResponseSchema = z.object({
   uuid: z.string(),
 });
@@ -1182,6 +1227,34 @@ export const SponsorListSchema = z.object({
 });
 export type SponsorList = z.infer<typeof SponsorListSchema>;
 
+export const StatusSchema = z.object({
+  amneziawg: z.unknown(),
+  appStats: z.unknown(),
+  cpu: z.number(),
+  cpuCores: z.number().int(),
+  cpuSpeedMhz: z.number(),
+  disk: z.unknown(),
+  diskIO: z.unknown(),
+  diskTraffic: z.unknown(),
+  loads: z.array(z.number()),
+  logicalPro: z.number().int(),
+  mem: z.unknown(),
+  netIO: z.unknown(),
+  netTraffic: z.unknown(),
+  networkInterface: z.lazy(() => NetworkTrafficSelectionSchema).nullable().optional(),
+  panelGuid: z.string(),
+  panelVersion: z.string(),
+  publicIP: z.unknown(),
+  resourceScope: z.string().optional(),
+  swap: z.unknown(),
+  tcpCount: z.number().int(),
+  udpCount: z.number().int(),
+  unavailableMetrics: z.array(z.string()).optional(),
+  uptime: z.number().int(),
+  xray: z.unknown(),
+});
+export type Status = z.infer<typeof StatusSchema>;
+
 export const SubBalancerSchema = z.object({
   createdAt: z.number().int(),
   enabled: z.boolean(),
@@ -1240,4 +1313,15 @@ export const UserSchema = z.object({
   username: z.string(),
 });
 export type User = z.infer<typeof UserSchema>;
+
+export const WireguardDeviceSchema = z.object({
+  allowedIPs: z.array(z.string()),
+  enable: z.boolean(),
+  id: z.string(),
+  name: z.string(),
+  preSharedKey: z.string().optional(),
+  privateKey: z.string(),
+  publicKey: z.string(),
+});
+export type WireguardDevice = z.infer<typeof WireguardDeviceSchema>;
 
