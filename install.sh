@@ -507,7 +507,7 @@ setup_ssl_certificate() {
     if ! command -v ~/.acme.sh/acme.sh &> /dev/null; then
         install_acme
         if [ $? -ne 0 ]; then
-            echo -e "${yellow}安装 acme.sh 失败, skipping SSL setup${plain}"
+            echo -e "${yellow}安装 acme.sh 失败，跳过 SSL 配置${plain}"
             return 1
         fi
     fi
