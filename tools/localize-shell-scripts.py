@@ -915,6 +915,9 @@ TRANSLATIONS = {
         "https://raw.githubusercontent.com/mhsanaei/3x-ui/v$tag_version/install.sh": "https://raw.githubusercontent.com/kakbga/3x-ui/main/install.sh",
         "https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh": "https://raw.githubusercontent.com/kakbga/3x-ui/main/install.sh",
     },
+    "deploy/test/installer-panel-port.sh": {
+        "Panel Installation Complete!": "面板安装完成！",
+    },
     "update.sh": {
         "Unsupported CPU architecture!": "不支持的 CPU 架构！",
         "ERROR: ${dir} is not writable for this process (read-only mount, attribute or full filesystem). The panel's fallback updater cannot run inside the hardened systemd sandbox; update from the panel UI (which uses systemd-run) or run 'x-ui update' in a shell.": "错误：当前进程无法写入 ${dir}（可能为只读挂载、文件属性限制或磁盘已满）。面板的备用更新程序无法在已加固的 systemd 沙箱内运行；请从面板界面更新（使用 systemd-run），或在 shell 中运行 'x-ui update'。",
