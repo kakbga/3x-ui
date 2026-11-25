@@ -12,33 +12,37 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def remove_sponsor_ui() -> None:
-    replacements = {
+    targets = {
         "frontend/src/pages/index/IndexPage.tsx": [
-            ("import SponsorSlot from '@/components/sponsor/SponsorSlot';\n", ""),
-            ('                  <SponsorSlot slot="dashboard" />\n', ""),
+            "import SponsorSlot from '@/components/sponsor/SponsorSlot';",
+            '<SponsorSlot slot="dashboard" />',
         ],
         "frontend/src/pages/login/LoginPage.tsx": [
-            ("import SponsorSlot from '@/components/sponsor/SponsorSlot';\n", ""),
-            ('                <SponsorSlot slot="login" variant="compact" className="login-sponsor" />\n', ""),
+            "import SponsorSlot from '@/components/sponsor/SponsorSlot';",
+            '<SponsorSlot slot="login" variant="compact" className="login-sponsor" />',
         ],
         "frontend/src/routes/panelRoutes.tsx": [
-            ("  CrownOutlined,\n", ""),
-            ("const SponsorsPage = lazy(() => import('@/pages/sponsors/SponsorsPage'));\n", ""),
-            ("  { path: '/sponsors', titleKey: 'menu.sponsors', icon: CrownOutlined, component: SponsorsPage },\n", ""),
+            "CrownOutlined,",
+            "const SponsorsPage = lazy(() => import('@/pages/sponsors/SponsorsPage'));",
+            "{ path: '/sponsors', titleKey: 'menu.sponsors', icon: CrownOutlined, component: SponsorsPage },",
         ],
     }
 
-    for relative, pairs in replacements.items():
+    for relative, snippets in targets.items():
         path = ROOT / relative
-        text = path.read_text(encoding="utf-8")
-        for old, new in pairs:
-            text = text.replace(old, new)
+        lines = [
+            line for line in path.read_text(encoding="utf-8").splitlines(keepends=True)
+            if not any(s in line for s in snippets)
+        ]
+        text = re.sub(r"\n{3,}", "\n\n", "".join(lines))
+
         if relative.endswith("IndexPage.tsx") and "SponsorSlot" in text:
             raise RuntimeError(f"Unrecognized sponsor placement remains in {relative}")
         if relative.endswith("LoginPage.tsx") and "SponsorSlot" in text:
             raise RuntimeError(f"Unrecognized sponsor placement remains in {relative}")
         if relative.endswith("panelRoutes.tsx") and ("SponsorsPage" in text or "'/sponsors'" in text):
             raise RuntimeError(f"Unrecognized sponsor route remains in {relative}")
+
         path.write_text(text, encoding="utf-8", newline="\n")
 
     palette = ROOT / "frontend/src/components/command-palette/CommandPalette.tsx"
