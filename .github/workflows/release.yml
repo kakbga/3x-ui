@@ -239,13 +239,13 @@ jobs:
       - name: Install MSYS2
         uses: msys2/setup-msys2@v2
         with:
-          msystem: MINGW64
+          msystem: UCRT64
           update: true
           install: >-
             git
-            mingw-w64-x86_64-gcc
-            mingw-w64-x86_64-sqlite3
-            mingw-w64-x86_64-pkg-config
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-sqlite3
+            mingw-w64-ucrt-x86_64-pkgconf
 
       - name: Build 3X-UI for Windows (CGO)
         shell: msys2 {0}
@@ -349,7 +349,7 @@ jobs:
   publish-dev:
     name: Publish rolling dev release
     needs: [build, build-windows]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -383,12 +383,15 @@ jobs:
             return 1
           }
           short="${COMMIT::8}"
-          notes="Rolling development build — installs via the panel's Dev update channel.
+          notes="个人自用构建，基于 3X-UI 官网 main 分支编译。
 
-          commit=${COMMIT}
-          built=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          构建时间（北京时间，UTC+8）=$(TZ=Asia/Shanghai date '+%Y-%m-%d %H:%M:%S')
 
-          Automated per-commit build from main. Not a stable release."
+          此版本已移除赞助展示，并提供中文安装交互提示。
+
+          这是滚动开发版，随官网更新，不是正式稳定版。
+
+          <!-- commit=${COMMIT} -->"
 
           # Force-move the dev-latest tag to this commit so the release tracks it.
           git tag -f dev-latest "${COMMIT}"
@@ -397,9 +400,14 @@ jobs:
           # The release exists on every run but the first; edit-first avoids an
           # existence probe that can 503 and mis-route into create (422).
           if ! retry gh release edit dev-latest --prerelease --latest=false \
-              --title "Dev build ${short}" --notes "${notes}"; then
+              --title "开发版 ${short}" --notes "${notes}"; then
             retry gh release create dev-latest --prerelease --latest=false \
-              --target "${COMMIT}" --title "Dev build ${short}" --notes "${notes}"
+              --target "${COMMIT}" --title "开发版 ${short}" --notes "${notes}"
           fi
+
+          # Keep GitHub's release comparison target aligned with the moved tag.
+          release_id=$(retry gh release view dev-latest --json databaseId --jq .databaseId)
+          retry gh api --method PATCH "repos/${GITHUB_REPOSITORY}/releases/${release_id}" \
+            --field "target_commitish=${COMMIT}"
 
           retry gh release upload dev-latest dev-artifacts/*.tar.gz dev-artifacts/*.zip dev-artifacts/*.sha256 --clobber
