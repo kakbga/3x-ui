@@ -254,7 +254,7 @@ def use_fork_docker_image() -> None:
     text = docker_yml.read_text(encoding="utf-8")
     
     text = text.replace("ghcr.io/mhsanaei/3x-ui", "ghcr.io/kakbga/3x-ui")
-    text = text.replace("mhsanaei/3x-ui", "lqutyy/3x-ui")
+    text = text.replace("hsanaeii/3x-ui", "lqutyy/3x-ui")
 
     if "mhsanaei/3x-ui" in text:
         raise RuntimeError("Failed to replace the image name in docker.yml")
